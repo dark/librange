@@ -8,18 +8,29 @@
 template <class KType, class AType>
 class TreeNode
 {
+  typedef void(*range_callback_func_t)(RangeOperator_t, KType*, void*);
+  typedef void(*punt_callback_func_t)(RangeOperator_t, std::map<KType*,AType*>, void*);
+  typedef void(*action_callback_func_t)(AType*, void*);
+
 public:
   // must return NULL on lookup failure
   virtual AType* find(KType* key) = 0;
+  virtual void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) = 0;
 };
 
 
 template <class KType, class AType>
 class ActionNode : public TreeNode<KType,AType>
 {
+  typedef void(*range_callback_func_t)(RangeOperator_t, KType*, void*);
+  typedef void(*punt_callback_func_t)(RangeOperator_t, std::map<KType*,AType*>, void*);
+  typedef void(*action_callback_func_t)(AType*, void*);
+
 public:
   ActionNode(AType *action) : action(action){}
   AType* find(KType *key) {return action;}
+  void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info)
+  { if (action_callback) (*action_callback)(action, extra_info); }
 
 private:
   AType *action;
@@ -35,7 +46,7 @@ public:
   RangeOperator_t getOp() {return op;}
 
 protected:
-  TreeNode<KType,AType> *dfl_action;
+  TreeNode<KType,AType> *dfl_node;
   RangeOperator_t op;
 };
 
@@ -43,11 +54,15 @@ protected:
 template <class KType, class AType>
 class RangeOpNode : public OpNode<KType,AType>
 {
+  typedef void(*range_callback_func_t)(RangeOperator_t, KType*, void*);
+  typedef void(*punt_callback_func_t)(RangeOperator_t, std::map<KType*,AType*>, void*);
+  typedef void(*action_callback_func_t)(AType*, void*);
+
 public:
   RangeOpNode(AType *outside_action)
     : range_separator(NULL), range_node(NULL)
   {
-    this->dfl_action = new ActionNode<KType,AType>(outside_action);
+    this->dfl_node = new ActionNode<KType,AType>(outside_action);
   }
 
   void addRange(RangeOperator_t op, KType *key, AType *cond_action)
@@ -86,7 +101,16 @@ public:
     if(res)
       return range_node->find(key);
 
-    return this->dfl_action->find(key);
+    return this->dfl_node->find(key);
+  }
+
+  void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info)
+  {
+    if (range_callback)
+      (*range_callback)(this->op, range_separator,  extra_info);
+
+    this->range_node->traverse(range_callback, punt_callback, action_callback, extra_info);
+    this->dfl_node->traverse(range_callback, punt_callback, action_callback, extra_info);
   }
 
 private:
@@ -98,10 +122,14 @@ private:
 template <class KType, class AType>
 class PunctOpNode : public OpNode<KType,AType>
 {
+  typedef void(*range_callback_func_t)(RangeOperator_t, KType*, void*);
+  typedef void(*punt_callback_func_t)(RangeOperator_t, std::map<KType*,AType*>, void*);
+  typedef void(*action_callback_func_t)(AType*, void*);
+
 public:
   PunctOpNode(AType *default_action)
   {
-    this->dfl_action = new ActionNode<KType,AType>(default_action);
+    this->dfl_node = new ActionNode<KType,AType>(default_action);
   }
 
   void addRange(RangeOperator_t op, KType *key, AType *cond_action)
@@ -115,8 +143,17 @@ public:
   AType* find(KType* key){
     typename std::map<KType*,AType*>::iterator i = others.find(key);
     if (i == others.end())
-      return this->dfl_action->find(key);
+      return this->dfl_node->find(key);
     return i->second;
+  }
+
+  void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info)
+  {
+    if (punt_callback){
+      (*punt_callback)(this->op, others, extra_info);
+    }
+
+    this->dfl_node->traverse(range_callback, punt_callback, action_callback, extra_info);
   }
 
 private:
