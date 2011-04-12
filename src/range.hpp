@@ -22,7 +22,7 @@ public:
 
 private:
   AType *default_action;
-  TreeNode<KType,AType> *tree;
+  OpNode<KType,AType> *tree;
 };
 
 
@@ -31,6 +31,16 @@ template <class KType, class AType>
 Range<KType,AType>::Range(AType *dfl_action)
   : default_action(dfl_action), tree(NULL)
 {
+}
+
+template <class KType, class AType>
+void Range<KType,AType>::addRange
+(RangeOperator_t op, KType *key, AType *action)
+{
+  if (tree == NULL)
+    tree = OpNode<KType,AType>::buildOpNode(default_action, op, key, action);
+  else
+    tree->addRange(op, key, action);
 }
 
 /* returns the action associated with the provided key */
