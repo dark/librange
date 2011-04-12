@@ -15,29 +15,44 @@ class Range
   typedef AType*(*merger_func_t)(AType*, AType*, void*);
   
 public:
-  Range(AType* def_action);
-  static Range intersect(Range a, Range b, merger_func_t merger, void* extra_info);
-  AType* find(KType* key);
+  Range(AType *dfl_action);
+  void addRange(RangeOperator_t op, KType *key, AType *action);
+  AType* find(KType *key);
+  static Range intersect(Range a, Range b, merger_func_t merger, void *extra_info);
 
 private:
+  AType *default_action;
+  TreeNode<KType,AType> *tree;
 };
 
 
 /* == template implementation follows == */
 template <class KType, class AType>
-Range<KType,AType>::Range(AType* default_action)
+Range<KType,AType>::Range(AType *dfl_action)
+  : default_action(dfl_action), tree(NULL)
 {
-  
+}
+
+/* returns the action associated with the provided key */
+template <class KType, class AType>
+AType* Range<KType,AType>::find(KType *key){
+  if (tree == NULL)
+    return default_action;
+
+  AType *action = tree->find(key);
+  if (action == NULL)
+    return default_action;
+  return action;
 }
 
 template <class KType, class AType>
 Range<KType,AType> Range<KType,AType>::intersect(Range a, Range b, merger_func_t merger, void* extra_info)
 {
+  #warning this code is just a dummy placeholder
   AType *t1, *t2;
   AType *t3 = (*merger)(t1,t2,extra_info);
 
   return a;
 }
-
 
 #endif /* RANGE_HPP_INCLUDED */
