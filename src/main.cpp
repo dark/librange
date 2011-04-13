@@ -6,13 +6,14 @@ using namespace std;
 
 class MyTest{
 public:
-  string* m(string *a, string *b){
+  string* m(const string *a, const string *b){
     cout << "lol" << endl;
-    return a;
+    string *s = new string("");
+    return s;
   }
 };
 
-string* mywrapper(string* a, string* b, void* other){
+string* mywrapper(const string* a, const string* b, void* other){
   MyTest *tmp = (MyTest*)other;
   return tmp->m(a,b);
 }

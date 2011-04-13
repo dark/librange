@@ -13,7 +13,7 @@
 template <class KType, class AType>
 class Range
 {
-  typedef AType*(*merger_func_t)(AType*, AType*, void*);
+  typedef AType*(*merger_func_t)(const AType*, const AType*, void*);
   typedef void(*range_callback_func_t)(RangeOperator_t, KType*, void*);
   typedef void(*punt_callback_func_t)(RangeOperator_t, std::map<KType*,AType*>, void*);
   typedef void(*action_callback_func_t)(AType*, void*);
@@ -63,11 +63,20 @@ AType* Range<KType,AType>::find(KType *key){
 template <class KType, class AType>
 Range<KType,AType> Range<KType,AType>::intersect(Range a, Range b, merger_func_t merger, void* extra_info)
 {
-  #warning this code is just a dummy placeholder
-  AType *t1, *t2;
-  AType *t3 = (*merger)(t1,t2,extra_info);
+  AType *new_dfl = (*merger)(a.default_action, b.default_action, extra_info);
+  Range result(new_dfl);
 
-  return a;
+  if(a.tree != NULL && b.tree != NULL) {
+    TreeNode<KType,AType> *tmp = TreeMerger<KType,AType>::merge(a.tree, b.tree, merger, extra_info);
+    // the following cast is legal, because by construction only an OpNode can be the root of the tree
+    result.tree = dynamic_cast<OpNode<KType,AType>*>(tmp);
+    if(!result.tree) abort(); // something broke
+  } else {
+    // otherwise take the not-NULL tree. If both are NULL, set it to NULL (implicit in the assignment below)
+    result.tree = (a.tree != NULL? a.tree : b.tree);
+  }
+
+  return result;
 }
 
 template <class KType, class AType>
