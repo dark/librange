@@ -57,7 +57,14 @@ class OpNode : public TreeNode<KType,AType>
 public:
   static OpNode* buildOpNode(AType *dfl_action, RangeOperator_t op, KType *key, AType *cond_action);
   virtual void addRange(RangeOperator_t op, KType *key, AType *cond_action) = 0;
-  RangeOperator_t getOp() {return op;}
+  inline RangeOperator_t getOp() {return op;}
+  inline RangeOperator_t getNormalizedOp() {
+    if (op == LESS_THAN || op == GREAT_EQUAL_THAN)
+      return LESS_THAN;
+    if (op == LESS_EQUAL_THAN || op == GREAT_THAN)
+      return LESS_EQUAL_THAN;
+    return op;
+  }
 
 protected:
   TreeNode<KType,AType> *dfl_node;
@@ -138,6 +145,22 @@ private:
   {
     this->dfl_node = dfl_node; 
   }
+
+  inline TreeNode<KType,AType> *left_interval(){
+    if (this->op == EQUAL || this->op == INVALID)
+      abort(); // something broke
+    if (this->op == LESS_THAN || this->op == LESS_EQUAL_THAN)
+      return range_node;
+    return this->dfl_node;
+  }
+
+  inline TreeNode<KType,AType> *right_interval(){
+    if (this->op == EQUAL || this->op == INVALID)
+      abort(); // something broke
+    if (this->op == LESS_THAN || this->op == LESS_EQUAL_THAN)
+      return this->dfl_node;
+    return this->range_node;
+  }
 };
 
 
@@ -216,20 +239,103 @@ public:
 
     // handle remaining cases
     if (a_type == RANGE) {
+      // the left node is a RangeOpNode
       const RangeOpNode<KType, AType> *a_promoted = dynamic_cast<RangeOpNode<KType, AType>*>(a);
-      if (!a) abort(); // something broke
+      if (!a_promoted) abort(); // something broke
 
       const RangeOperator_t a_op = a_promoted->getOp();
       const KType *a_separator = a_promoted->range_separator;
+
       RangeOpNode<KType, AType> *result;
       switch(b_type){
       case RANGE:
+        // the right node is a RangeOpNode
+        const RangeOpNode<KType, AType> *b_promoted = dynamic_cast<RangeOpNode<KType, AType>*>(b);
+        if (!b_promoted) abort(); // something broke
+        
+        const RangeOperator_t b_op = b_promoted->getOp();
+        const KType *b_separator = b_promoted->range_separator;
+
+        // except when a_separator == b_separator, the intersection
+        // between two ranges gives three intervals and two separators
+        TreeNode<KType, AType> *int_1=NULL, *int_2=NULL, *int_3=NULL;
+        RangeOperator_t sep_1=INVALID, sep_2=INVALID;
+        KType *sep_1_val=NULL, *sep_2_val=NULL;
+        if(a_separator == b_separator) {
+          int_1 = merge(a_promoted->left_interval(),
+                        b_promoted->left_interval(),
+                        merger, extra_info);
+          int_3 = merge(a_promoted->right_interval(),
+                        b_promoted->right_interval(),
+                        merger, extra_info);
+          sep_1 = a_promoted->getNormalizedOp();
+          sep_2 = b_promoted->getNormalizedOp();
+          sep_1_val = sep_2_val = a_separator;
+          if(a_promoted->getNormalizedOp() != b_promoted->getNormalizedOp()) {
+            // there is a small "gap" between the intervals (as in '<x' and '>x')
+            // or they are overlapped ('<=x' and '>=x')
+            // handle both cases here
+            int_2 = merge((sep_1 == LESS_THAN? a_promoted->right_interval() :  a_promoted->left_interval),
+                          (sep_1 == LESS_THAN? a_promoted->left_interval() :  a_promoted->right_interval),
+                          merger, extra_info);
+            sep_1 = LESS_THAN;
+            sep_2 = LESS_EQUAL_THAN;
+          } 
+        } else if(a_separator < b_separator) {
+          int_1 = merge(a_promoted->left_interval(),
+                        b_promoted->left_interval(),
+                        merger, extra_info);
+          int_2 = merge(a_promoted->right_interval(),
+                        b_promoted->left_interval(),
+                        merger, extra_info);
+          int_3 = merge(a_promoted->right_interval(),
+                        b_promoted->right_interval(),
+                        merger, extra_info);
+          sep_1 = a_promoted->getNormalizedOp();
+          sep_2 = b_promoted->getNormalizedOp();
+          sep_1_val = a_separator;
+          sep_2_val = b_separator;
+        } else {
+          // a_separator > b_separator
+          int_1 = merge(a_promoted->left_interval(),
+                        b_promoted->left_interval(),
+                        merger, extra_info);
+          int_2 = merge(a_promoted->left_interval(),
+                        b_promoted->right_interval(),
+                        merger, extra_info);
+          int_3 = merge(a_promoted->right_interval(),
+                        b_promoted->right_interval(),
+                        merger, extra_info);
+          sep_1 = b_promoted->getNormalizedOp();
+          sep_2 = a_promoted->getNormalizedOp();
+          sep_1_val = b_separator;
+          sep_2_val = a_separator;
+        }
+        
+        // if int_2 == NULL, sep_2 will be ignored
+        if (int_2 != NULL) {
+          RangeOpNode<KType,AType> *tmp = new RangeOpNode<KType,AType>(int_3);
+          tmp->op = sep_2;
+          tmp->range_separator = sep_2_val;
+          tmp->range_node = int_2;
+
+          int_2 = tmp;
+        } else
+          int_2 = int_3;
+
+        result = new RangeOpNode<KType,AType>(int_2);
+        result->op = sep_1;
+        result->range_separator = sep_1_val;
+        result->range_node = int_1;
         break;
 
       case PUNCTUAL:
+        // the right node is a PunctOpNode
+#warning writeme
         break;
 
       case ACTION:
+        // the right node is a ActionNode
         const TreeNode<KType, AType> *new_dfl_node = merge(a->dfl_node, b, merger, extra_info);
         result = new RangeOpNode<KType, AType>(new_dfl_node);
         result->op = a_promoted->op;
@@ -240,6 +346,8 @@ public:
 
       return result;
     } else if (a_type == PUNCTUAL) {
+      // the left node is a PunctOpNode
+#warning writeme  
     } else {
       abort(); // something broke in the comparisons above
     }
