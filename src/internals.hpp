@@ -320,8 +320,7 @@ public:
           for(typename std::map<KType*,AType*>::const_iterator i = a_prom_punct->others.begin();
               i != a_prom_punct->others.end();
               ++i)
-            (*merger)(const_cast<AType*>(i->second), const_cast<AType*>(b_action), extra_info);
-            // tmp_result_punct->others[const_cast<KType*>(i->first)]=(*merger)(const_cast<AType*>(i->second), b_action, extra_info);
+            tmp_result_punct->others[i->first]=(*merger)(i->second, b_action, extra_info);
           
           result_punct = tmp_result_punct;
           break;
