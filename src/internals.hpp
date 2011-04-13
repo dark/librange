@@ -337,9 +337,9 @@ public:
 
 
 private:
-  static TreeNode<KType, AType>* merge_range_range(const RangeOpNode<KType, AType> *a,
-                                                   const RangeOpNode<KType, AType> *b,
-                                                   merger_func_t merger, void *extra_info)
+  static RangeOpNode<KType, AType>* merge_range_range(const RangeOpNode<KType, AType> *a,
+                                                      const RangeOpNode<KType, AType> *b,
+                                                      merger_func_t merger, void *extra_info)
   {
     KType *a_separator = a->range_separator;
     KType *b_separator = b->range_separator;
@@ -419,6 +419,7 @@ private:
     return result;
   }
 
+#warning if possible, make the return type more specific (and remove casts backwards)
   static TreeNode<KType, AType>* merge_range_punct(const RangeOpNode<KType, AType> *a,
                                                    const PunctOpNode<KType, AType> *b,
                                                    merger_func_t merger, void *extra_info)
@@ -427,6 +428,7 @@ private:
     return NULL;
   }
 
+#warning if possible, make the return type more specific (and remove casts backwards)
   static TreeNode<KType, AType>* merge_punct_punct(const PunctOpNode<KType, AType> *a,
                                                    const PunctOpNode<KType, AType> *b,
                                                    merger_func_t merger, void *extra_info)
