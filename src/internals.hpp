@@ -259,7 +259,7 @@ public:
       const RangeOpNode<KType, AType> *a_prom_range = dynamic_cast<const RangeOpNode<KType, AType>*>(a);
       if (!a_prom_range) abort(); // something broke
 
-      TreeNode<KType, AType> *result_range;
+      RangeOpNode<KType, AType> *result_range;
       switch(b_type){
       case RANGE:
         {
@@ -283,12 +283,11 @@ public:
         {
           // the right node is a ActionNode
           const TreeNode<KType, AType> *new_dfl_node = merge(a_prom_range->dfl_node, b, merger, extra_info);
-          RangeOpNode<KType, AType> *tmp_result_range = new RangeOpNode<KType, AType>(new_dfl_node);
-          tmp_result_range->op = a_prom_range->op;
-          tmp_result_range->range_separator = a_prom_range->range_separator;
-          tmp_result_range->range_node = merge(a_prom_range->range_node, b, merger, extra_info);
+          result_range = new RangeOpNode<KType, AType>(new_dfl_node);
+          result_range->op = a_prom_range->op;
+          result_range->range_separator = a_prom_range->range_separator;
+          result_range->range_node = merge(a_prom_range->range_node, b, merger, extra_info);
 
-          result_range = tmp_result_range;
           break;
         }
       }
@@ -419,13 +418,64 @@ private:
     return result;
   }
 
-#warning if possible, make the return type more specific (and remove casts backwards)
-  static TreeNode<KType, AType>* merge_range_punct(const RangeOpNode<KType, AType> *a,
-                                                   const PunctOpNode<KType, AType> *b,
-                                                   merger_func_t merger, void *extra_info)
+  static RangeOpNode<KType, AType>* merge_range_punct(const RangeOpNode<KType, AType> *a,
+                                                      const PunctOpNode<KType, AType> *b,
+                                                      merger_func_t merger, void *extra_info)
   {
-#warning writeme
-    return NULL;
+    KType *a_separator = a->range_separator;
+    const RangeOperator_t a_op = a->getOp();
+    const RangeOperator_t a_norm_op = a->getNormalizedOp();
+
+    // The result of the merge will be a RangedOpNode at the top, with TreeNode(s)
+    // below it (their type depends on the actual code path taken here).
+    RangeOpNode<KType, AType> *result = NULL;
+    // While building, I keep temporary variables of PunctOpNode(s) for the children.
+    PunctOpNode<KType, AType> *tmp_child_left = NULL, *tmp_child_right=NULL;
+
+    // separate left-hand punctual values from right-hand ones
+    bool scanning_left_side = true;
+    for(typename std::map<KType*,AType*>::const_iterator i = b->others.begin();
+        i != b->others.end();
+        ++i) {
+      if (scanning_left_side && ( a_norm_op == LESS_THAN ?
+                                  *(i->first) < *a_separator :
+                                  *(i->first) <= *a_separator ))
+      {
+        // the current punctual value must go in the left child
+        if (!tmp_child_left) {
+          tmp_child_left = new PunctOpNode<KType, AType>(b->dfl_node);
+          tmp_child_left->op = EQUAL;
+        }
+        tmp_child_left->addPuntAction(i->first, i->second);
+      } else {
+        // the current punctual value must go in the right child
+        scanning_left_side = false;
+        if (!tmp_child_right) {
+          tmp_child_right = new PunctOpNode<KType, AType>(b->dfl_node);
+          tmp_child_right->op = EQUAL;
+        }
+        tmp_child_right->addPuntAction(i->first, i->second);
+      }
+    }
+
+    // Actually create the children. Must take care of two things:
+    // 1) the orientation of the parent RangeOpNode
+    // 2) whether if any of the tmp children is empty
+    TreeNode<KType, AType> *child_left = merge((a_op == LESS_THAN || a_op == LESS_EQUAL_THAN ?
+                                                a->range_node : a->dfl_node ),
+                                               (tmp_child_left? tmp_child_left : b->dfl_node),
+                                               merger, extra_info);
+    TreeNode<KType, AType> *child_right = merge((a_op == LESS_THAN || a_op == LESS_EQUAL_THAN ?
+                                                 a->dfl_node : a->range_node ),
+                                                (tmp_child_right? tmp_child_right : b->dfl_node),
+                                                merger, extra_info);
+
+    result = new RangeOpNode<KType, AType>(child_right);
+    result->op = a_norm_op;
+    result->range_separator = a_separator;
+    result->range_node = child_left;
+
+    return result;
   }
 
 #warning if possible, make the return type more specific (and remove casts backwards)
