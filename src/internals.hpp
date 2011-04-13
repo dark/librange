@@ -5,14 +5,27 @@
 #include <stdlib.h>
 #include "common.h"
 
+enum Node_t
+  {
+    ACTION = 0,
+    RANGE,
+    PUNCTUAL
+  };
+
+template <class KType, class AType>
+class TreeMerger; // fwd decl
+
 template <class KType, class AType>
 class TreeNode
 {
+  friend class TreeMerger<KType, AType>;
+
   typedef void(*range_callback_func_t)(RangeOperator_t, KType*, void*);
   typedef void(*punt_callback_func_t)(RangeOperator_t, std::map<KType*,AType*>, void*);
   typedef void(*action_callback_func_t)(AType*, void*);
 
 public:
+  virtual Node_t getType() = 0;
   // must return NULL on lookup failure
   virtual AType* find(KType* key) = 0;
   virtual void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) = 0;
@@ -28,6 +41,7 @@ class ActionNode : public TreeNode<KType,AType>
 
 public:
   ActionNode(AType *action) : action(action){}
+  Node_t getType() { return ACTION; }
   AType* find(KType *key) {return action;}
   void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info)
   { if (action_callback) (*action_callback)(action, extra_info); }
@@ -64,6 +78,8 @@ public:
   {
     this->dfl_node = new ActionNode<KType,AType>(outside_action);
   }
+
+  Node_t getType() { return RANGE; }
 
   void addRange(RangeOperator_t op, KType *key, AType *cond_action)
   {
@@ -116,6 +132,12 @@ public:
 private:
   KType *range_separator;
   TreeNode<KType,AType> *range_node;
+
+  RangeOpNode(ActionNode<KType,AType> *dfl_node)
+    : range_separator(NULL), range_node(NULL)
+  {
+    this->dfl_node = dfl_node; 
+  }
 };
 
 
@@ -131,6 +153,8 @@ public:
   {
     this->dfl_node = new ActionNode<KType,AType>(default_action);
   }
+
+  Node_t getType() { return PUNCTUAL; }
 
   void addRange(RangeOperator_t op, KType *key, AType *cond_action)
   {
@@ -163,6 +187,62 @@ private:
 
   void addPuntAction(KType *key, AType *action){
     others[key]=action;
+  }
+};
+
+template <class KType, class AType>
+class TreeMerger
+{
+  typedef AType*(*merger_func_t)(AType*, AType*, void*);
+
+public:
+  static TreeNode<KType, AType>* merge(TreeNode<KType, AType> *a, TreeNode<KType, AType> *b,
+                                       merger_func_t merger, void *extra_info)
+  {
+    Node_t a_type = a->getType();
+    Node_t b_type = b->getType();
+
+    // handle immediately the easiest cases
+    if (a_type == ACTION && b_type == ACTION) {
+      AType m = (*merger)(a->action, b->action, extra_info);
+      return new ActionNode<KType, AType>(m);
+    }
+
+    // I prefer to have more 'complex' types in 'a' rather than in 'b',
+    // so swap them if necessary
+    if ( (b_type == RANGE && a_type != RANGE) ||
+         (b_type == PUNCTUAL && a_type == ACTION) )
+      return merge(b, a, merger, extra_info);
+
+    // handle remaining cases
+    if (a_type == RANGE) {
+      const RangeOpNode<KType, AType> *a_promoted = dynamic_cast<RangeOpNode<KType, AType>*>(a);
+      if (!a) abort(); // something broke
+
+      const RangeOperator_t a_op = a_promoted->getOp();
+      const KType *a_separator = a_promoted->range_separator;
+      RangeOpNode<KType, AType> *result;
+      switch(b_type){
+      case RANGE:
+        break;
+
+      case PUNCTUAL:
+        break;
+
+      case ACTION:
+        const TreeNode<KType, AType> *new_dfl_node = merge(a->dfl_node, b, merger, extra_info);
+        result = new RangeOpNode<KType, AType>(new_dfl_node);
+        result->op = a_promoted->op;
+        result->range_separator = a_promoted->range_separator;
+        result->range_node =  merge(a->range_node, b, merger, extra_info);
+        break;
+      }
+
+      return result;
+    } else if (a_type == PUNCTUAL) {
+    } else {
+      abort(); // something broke in the comparisons above
+    }
   }
 };
 
