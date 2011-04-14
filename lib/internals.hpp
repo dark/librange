@@ -260,7 +260,7 @@ public:
 
     // handle immediately the easiest cases
     if (a_type == ACTION && b_type == ACTION) {
-      const ActionNode<KType, AType> *a_prom_action = dynamic_cast<const ActionNode<KType, AType>*>(b);
+      const ActionNode<KType, AType> *a_prom_action = dynamic_cast<const ActionNode<KType, AType>*>(a);
       const ActionNode<KType, AType> *b_prom_action = dynamic_cast<const ActionNode<KType, AType>*>(b);
       if (!a_prom_action || !b_prom_action) abort(); // something broke
       AType *m = (*merger)(a_prom_action->action, b_prom_action->action, extra_info);
