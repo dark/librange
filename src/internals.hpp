@@ -501,8 +501,36 @@ private:
                                                       const PunctOpNode<KType, AType> *b,
                                                       merger_func_t merger, void *extra_info)
   {
-#warning writeme
-    return NULL;
+    const ActionNode<KType, AType> *a_dfl = dynamic_cast<const ActionNode<KType, AType>*>(a->dfl_node);
+    const ActionNode<KType, AType> *b_dfl = dynamic_cast<const ActionNode<KType, AType>*>(b->dfl_node);
+    if (!a_dfl || !b_dfl) abort(); // something broke
+
+    PunctOpNode<KType, AType> *result = new PunctOpNode<KType, AType>( merge(a->dfl_node, b->dfl_node, merger, extra_info) );
+    result->op = EQUAL;
+    
+    typename std::map<KType*,AType*>::const_iterator a_iter = a->others.begin();
+    typename std::map<KType*,AType*>::const_iterator b_iter = b->others.begin();
+    for (; a_iter != a->others.end() && b_iter != b->others.end() ; ) {
+      if( *(a_iter->first) < *(b_iter->first) ) {
+        result->others[a_iter->first]=(*merger)(a_iter->second, b_dfl->action, extra_info);
+        ++a_iter;
+      } else if ( *(a_iter->first) > *(b_iter->first) ) {
+        result->others[b_iter->first]=(*merger)(a_dfl->action, b_iter->second, extra_info);
+        ++b_iter;
+      } else { // if *(a_iter->first) == *(b_iter->first) )
+        result->others[a_iter->first]=(*merger)(a_iter->second, b_iter->second, extra_info);
+        ++a_iter;
+        ++b_iter;
+      }
+    }
+
+    // add the remaining mappings
+    for (; a_iter != a->others.end(); ++a_iter)
+      result->others[a_iter->first]=(*merger)(a_iter->second, b_dfl->action, extra_info);
+    for (; b_iter != b->others.end(); ++b_iter)
+      result->others[b_iter->first]=(*merger)(a_dfl->action, b_iter->second, extra_info);
+
+    return result;
   }
 
 };
