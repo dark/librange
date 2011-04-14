@@ -318,7 +318,7 @@ public:
       const PunctOpNode<KType, AType> *a_prom_punct = dynamic_cast<const PunctOpNode<KType, AType>*>(a);
       if (!a_prom_punct) abort(); // something broke
 
-      TreeNode<KType, AType> *result_punct;
+      PunctOpNode<KType, AType> *result_punct;
       switch(b_type){
       case PUNCTUAL:
         {
@@ -334,14 +334,13 @@ public:
           // the right node is a ActionNode
           const TreeNode<KType, AType> *new_dfl_node = merge(a_prom_punct->dfl_node, b, merger, extra_info);
           const AType *b_action = dynamic_cast<const ActionNode<KType, AType>*>(b)->action;
-          PunctOpNode<KType, AType> *tmp_result_punct = new PunctOpNode<KType, AType>(new_dfl_node);
-          tmp_result_punct->op = EQUAL;
+          result_punct = new PunctOpNode<KType, AType>(new_dfl_node);
+          result_punct->op = EQUAL;
           for(typename std::map<KType*,AType*>::const_iterator i = a_prom_punct->others.begin();
               i != a_prom_punct->others.end();
               ++i)
-            tmp_result_punct->others[i->first]=(*merger)(i->second, b_action, extra_info);
+            result_punct->others[i->first]=(*merger)(i->second, b_action, extra_info);
           
-          result_punct = tmp_result_punct;
           break;
         }
 
@@ -498,10 +497,9 @@ private:
     return result;
   }
 
-#warning if possible, make the return type more specific (and remove casts backwards)
-  static TreeNode<KType, AType>* merge_punct_punct(const PunctOpNode<KType, AType> *a,
-                                                   const PunctOpNode<KType, AType> *b,
-                                                   merger_func_t merger, void *extra_info)
+  static PunctOpNode<KType, AType>* merge_punct_punct(const PunctOpNode<KType, AType> *a,
+                                                      const PunctOpNode<KType, AType> *b,
+                                                      merger_func_t merger, void *extra_info)
   {
 #warning writeme
     return NULL;
