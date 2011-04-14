@@ -21,34 +21,104 @@
 #include "range.hpp"
 #include <string>
 #include <iostream>
+#include <stack>
 
 using namespace std;
 
 class MyTest{
 public:
-  string* m(const string *a, const string *b){
-    cout << "lol" << endl;
-    string *s = new string("");
+  MyTest() {MyTest::instance = this;}
+
+  string* merger(const string *a, const string *b){
+    string *s = new string("[merged '");
+    s->append(*a).append("' with '").append(*b).append("']");
+    cout << a << " " << b << ": " << *s << endl;
     return s;
   }
-};
 
-string* mywrapper(const string* a, const string* b, void* other){
-  MyTest *tmp = (MyTest*)other;
-  return tmp->m(a,b);
+  static string* mywrapper(const string* a, const string* b, void* other){
+    return instance->merger(a,b);
+  }
+
+private:
+  static MyTest *instance;
+};
+MyTest* MyTest::instance = NULL;
+
+void print_mapping(Range<string,string> &map, string *key){
+  cout << "'" << (*key) << "' mapped to: '" << *(map.find(key)) << "'" << endl;
 }
 
+void pr_indent(int i){ for(; i; --i) cout << " "; }
+void cb_range(RangeOperator_t r, string *s, void *ptr){
+  stack<int> *stk = (stack<int>*)ptr;
+  int indent = stk->top();
+  stk->pop();
+
+  pr_indent(indent);
+  cout << "RANGE: " << r << " for " << *s << endl;
+  ++indent;
+  stk->push(indent);
+  stk->push(indent);
+}
+void cb_punt(RangeOperator_t r, std::map<string*,string*> m, void *ptr){
+  stack<int> *stk = (stack<int>*)ptr;
+  int indent = stk->top();
+  stk->pop();
+
+  pr_indent(indent);
+  cout << "PUNT: " << endl;
+  ++indent;
+  for(std::map<string*,string*>::iterator iter = m.begin();
+      iter != m.end();
+      ++iter) {
+    pr_indent(indent);
+    cout << "{"<< *(iter->first) <<"} => {"<< *(iter->second) <<"}" << endl;
+  }
+  stk->push(indent);
+}
+void cb_action(string *s, void *ptr){
+  stack<int> *stk = (stack<int>*)ptr;
+  int indent = stk->top();
+  stk->pop();
+
+  pr_indent(indent);
+  cout << "ACTION: " << *s << endl;
+}
+void do_traversal(Range<string,string> &map){
+  stack<int> stk;
+  stk.push(0);
+  map.traverse(cb_range, cb_punt, cb_action, &stk);
+}
 
 int main(){
-  string *a = new string("");
-  string *b = new string("");
   MyTest t;
 
-  string *me = new string("me");
-  string *you= new string("you");
+  string *dfl_val = new string("DEFAULT");
+  string *a_k = new string("chiave_a");
+  string *a_val = new string("valore_a");
+  string *b_k = new string("chiave_b");
+  string *b_val= new string("valore_b");
+  string *c_k = new string("chiave_c");
+  string *c_val= new string("valore_c");
 
-  Range<string,string> r1(a);
-  r1.addRange(EQUAL, me, you);
-  Range<string,string> r2(b);
-  Range<string,string> r3 = Range<string,string>::intersect(r1, r2, &mywrapper, (void*)&t);
+  Range<string,string> r1(dfl_val);
+  r1.addRange(EQUAL, b_k, b_val);
+  print_mapping(r1, a_k);
+  print_mapping(r1, b_k);
+  print_mapping(r1, c_k);
+  do_traversal(r1);
+
+  Range<string,string> r2(dfl_val);
+  r2.addRange(LESS_THAN, c_k, c_val);
+  print_mapping(r2, a_k);
+  print_mapping(r2, b_k);
+  print_mapping(r2, c_k);
+  do_traversal(r2);
+
+  Range<string,string> r3 = Range<string,string>::intersect(r1, r2, &MyTest::mywrapper, NULL);
+  print_mapping(r3, a_k);
+  print_mapping(r3, b_k);
+  print_mapping(r3, c_k);
+  do_traversal(r3);
 }
