@@ -1,0 +1,16 @@
+## Build-related files
+aclocal.m4
+autom4te.cache
+build-aux
+config.*
+stamp-h1
+configure
+libtool
+Makefile.in
+
+## Makefiles generated
+Makefile
+
+## temporary libtool directories
+.deps
+.libs
