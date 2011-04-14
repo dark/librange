@@ -94,7 +94,8 @@ void do_traversal(Range<string,string> &map){
 int main(){
   MyTest t;
 
-  string *dfl_val = new string("DEFAULT");
+  string *dfl_val_1 = new string("DEFAULT1"); 
+  string *dfl_val_2 = new string("DEFAULT2"); 
   string *a_k = new string("chiave_a");
   string *a_val = new string("valore_a");
   string *b_k = new string("chiave_b");
@@ -102,14 +103,14 @@ int main(){
   string *c_k = new string("chiave_c");
   string *c_val= new string("valore_c");
 
-  Range<string,string> r1(dfl_val);
+  Range<string,string> r1(dfl_val_1);
   r1.addRange(EQUAL, b_k, b_val);
   print_mapping(r1, a_k);
   print_mapping(r1, b_k);
   print_mapping(r1, c_k);
   do_traversal(r1);
 
-  Range<string,string> r2(dfl_val);
+  Range<string,string> r2(dfl_val_2);
   r2.addRange(LESS_THAN, c_k, c_val);
   print_mapping(r2, a_k);
   print_mapping(r2, b_k);
