@@ -253,7 +253,9 @@ class TreeMerger
 
 public:
   static TreeNode<KType, AType>* merge(const TreeNode<KType, AType> *a, const TreeNode<KType, AType> *b,
-                                       merger_func_t merger, void *extra_info)
+                                       merger_func_t merger, void *extra_info,
+                                       const KType *bound_low, const bool bl_incl,
+                                       const KType *bound_high, const bool bh_incl)
   {
     Node_t a_type = a->getType();
     Node_t b_type = b->getType();
@@ -271,7 +273,7 @@ public:
     // so swap them if necessary
     if ( (b_type == RANGE && a_type != RANGE) ||
          (b_type == PUNCTUAL && a_type == ACTION) )
-      return merge(b, a, merger, extra_info);
+      return merge(b, a, merger, extra_info, bound_low, bl_incl, bound_high, bh_incl);
 
     // handle remaining cases
     if (a_type == RANGE) {
@@ -286,7 +288,8 @@ public:
           // the right node is a RangeOpNode
           const RangeOpNode<KType, AType> *b_prom_range = dynamic_cast<const RangeOpNode<KType, AType>*>(b);
           if (!b_prom_range) abort(); // something broke
-          result_range = merge_range_range(a_prom_range, b_prom_range, merger, extra_info);
+          result_range = merge_range_range(a_prom_range, b_prom_range, merger, extra_info,
+                                           bound_low, bl_incl, bound_high, bh_incl);
           break;
         }
 
@@ -295,18 +298,20 @@ public:
           // the right node is a PunctOpNode
           const PunctOpNode<KType, AType> *b_prom_punct = dynamic_cast<const PunctOpNode<KType, AType>*>(b);
           if (!b_prom_punct) abort(); // something broke
-          result_range = merge_range_punct(a_prom_range, b_prom_punct, merger, extra_info);
+          result_range = merge_range_punct(a_prom_range, b_prom_punct, merger, extra_info,
+                                           bound_low, bl_incl, bound_high, bh_incl);
           break;
         }
 
       case ACTION:
         {
           // the right node is a ActionNode
-          const TreeNode<KType, AType> *new_dfl_node = merge(a_prom_range->dfl_node, b, merger, extra_info);
+          const TreeNode<KType, AType> *new_dfl_node = merge(a_prom_range->dfl_node, b, merger, extra_info, bound_low, bl_incl, bound_high, bh_incl);
           result_range = new RangeOpNode<KType, AType>(new_dfl_node);
           result_range->op = a_prom_range->op;
           result_range->range_separator = a_prom_range->range_separator;
-          result_range->range_node = merge(a_prom_range->range_node, b, merger, extra_info);
+          result_range->range_node = merge(a_prom_range->range_node, b, merger, extra_info,
+                                           bound_low, bl_incl, bound_high, bh_incl);
 
           break;
         }
@@ -325,14 +330,15 @@ public:
           // the right node is a PunctOpNode
           const PunctOpNode<KType, AType> *b_prom_punct = dynamic_cast<const PunctOpNode<KType, AType>*>(b);
           if (!b_prom_punct) abort(); // something broke
-          result_punct = merge_punct_punct(a_prom_punct, b_prom_punct, merger, extra_info);
+          result_punct = merge_punct_punct(a_prom_punct, b_prom_punct, merger, extra_info,
+                                           bound_low, bl_incl, bound_high, bh_incl);
           break;
         }
 
       case ACTION:
         { 
           // the right node is a ActionNode
-          const TreeNode<KType, AType> *new_dfl_node = merge(a_prom_punct->dfl_node, b, merger, extra_info);
+          const TreeNode<KType, AType> *new_dfl_node = merge(a_prom_punct->dfl_node, b, merger, extra_info, bound_low, bl_incl, bound_high, bh_incl);
           const AType *b_action = dynamic_cast<const ActionNode<KType, AType>*>(b)->action;
           result_punct = new PunctOpNode<KType, AType>(new_dfl_node);
           result_punct->op = EQUAL;
@@ -357,8 +363,11 @@ public:
 private:
   static RangeOpNode<KType, AType>* merge_range_range(const RangeOpNode<KType, AType> *a,
                                                       const RangeOpNode<KType, AType> *b,
-                                                      merger_func_t merger, void *extra_info)
+                                                      merger_func_t merger, void *extra_info,
+                                                      const KType *bound_low, const bool bl_incl,
+                                                      const KType *bound_high, const bool bh_incl)
   {
+#warning update to account boundaries
     KType *a_separator = a->range_separator;
     KType *b_separator = b->range_separator;
 
@@ -370,10 +379,12 @@ private:
     if(*a_separator == *b_separator) {
       int_1 = merge(a->left_interval(),
                     b->left_interval(),
-                    merger, extra_info);
+                    merger, extra_info,
+                    bound_low, bl_incl, bound_high, bh_incl);
       int_3 = merge(a->right_interval(),
                     b->right_interval(),
-                    merger, extra_info);
+                    merger, extra_info,
+                    bound_low, bl_incl, bound_high, bh_incl);
       sep_1 = a->getNormalizedOp();
       sep_2 = b->getNormalizedOp();
       sep_1_val = sep_2_val = a_separator;
@@ -383,20 +394,24 @@ private:
         // handle both cases here
         int_2 = merge((sep_1 == LESS_THAN? a->right_interval() : a->left_interval() ),
                       (sep_1 == LESS_THAN? a->left_interval() : a->right_interval() ),
-                      merger, extra_info);
+                      merger, extra_info,
+                      bound_low, bl_incl, bound_high, bh_incl);
         sep_1 = LESS_THAN;
         sep_2 = LESS_EQUAL_THAN;
       } 
     } else if(*a_separator < *b_separator) {
       int_1 = merge(a->left_interval(),
                     b->left_interval(),
-                    merger, extra_info);
+                    merger, extra_info,
+                    bound_low, bl_incl, bound_high, bh_incl);
       int_2 = merge(a->right_interval(),
                     b->left_interval(),
-                    merger, extra_info);
+                    merger, extra_info,
+                    bound_low, bl_incl, bound_high, bh_incl);
       int_3 = merge(a->right_interval(),
                     b->right_interval(),
-                    merger, extra_info);
+                    merger, extra_info,
+                    bound_low, bl_incl, bound_high, bh_incl);
       sep_1 = a->getNormalizedOp();
       sep_2 = b->getNormalizedOp();
       sep_1_val = a_separator;
@@ -405,13 +420,16 @@ private:
       // *a_separator > *b_separator
       int_1 = merge(a->left_interval(),
                     b->left_interval(),
-                    merger, extra_info);
+                    merger, extra_info,
+                    bound_low, bl_incl, bound_high, bh_incl);
       int_2 = merge(a->left_interval(),
                     b->right_interval(),
-                    merger, extra_info);
+                    merger, extra_info,
+                    bound_low, bl_incl, bound_high, bh_incl);
       int_3 = merge(a->right_interval(),
                     b->right_interval(),
-                    merger, extra_info);
+                    merger, extra_info,
+                    bound_low, bl_incl, bound_high, bh_incl);
       sep_1 = b->getNormalizedOp();
       sep_2 = a->getNormalizedOp();
       sep_1_val = b_separator;
@@ -439,8 +457,11 @@ private:
 
   static RangeOpNode<KType, AType>* merge_range_punct(const RangeOpNode<KType, AType> *a,
                                                       const PunctOpNode<KType, AType> *b,
-                                                      merger_func_t merger, void *extra_info)
+                                                      merger_func_t merger, void *extra_info,
+                                                      const KType *bound_low, const bool bl_incl,
+                                                      const KType *bound_high, const bool bh_incl)
   {
+#warning update to account boundaries
     KType *a_separator = a->range_separator;
     const RangeOperator_t a_op = a->getOp();
     const RangeOperator_t a_norm_op = a->getNormalizedOp();
@@ -483,11 +504,13 @@ private:
     TreeNode<KType, AType> *child_left = merge((a_op == LESS_THAN || a_op == LESS_EQUAL_THAN ?
                                                 a->range_node : a->dfl_node ),
                                                (tmp_child_left? tmp_child_left : b->dfl_node),
-                                               merger, extra_info);
+                                               merger, extra_info,
+                                               bound_low, bl_incl, bound_high, bh_incl);
     TreeNode<KType, AType> *child_right = merge((a_op == LESS_THAN || a_op == LESS_EQUAL_THAN ?
                                                  a->dfl_node : a->range_node ),
                                                 (tmp_child_right? tmp_child_right : b->dfl_node),
-                                                merger, extra_info);
+                                                merger, extra_info,
+                                                bound_low, bl_incl, bound_high, bh_incl);
 
     result = new RangeOpNode<KType, AType>(child_right);
     result->op = a_norm_op;
@@ -499,13 +522,16 @@ private:
 
   static PunctOpNode<KType, AType>* merge_punct_punct(const PunctOpNode<KType, AType> *a,
                                                       const PunctOpNode<KType, AType> *b,
-                                                      merger_func_t merger, void *extra_info)
+                                                      merger_func_t merger, void *extra_info,
+                                                      const KType *bound_low, const bool bl_incl,
+                                                      const KType *bound_high, const bool bh_incl)
   {
+#warning update to account boundaries
     const ActionNode<KType, AType> *a_dfl = dynamic_cast<const ActionNode<KType, AType>*>(a->dfl_node);
     const ActionNode<KType, AType> *b_dfl = dynamic_cast<const ActionNode<KType, AType>*>(b->dfl_node);
     if (!a_dfl || !b_dfl) abort(); // something broke
 
-    PunctOpNode<KType, AType> *result = new PunctOpNode<KType, AType>( merge(a->dfl_node, b->dfl_node, merger, extra_info) );
+    PunctOpNode<KType, AType> *result = new PunctOpNode<KType, AType>( merge(a->dfl_node, b->dfl_node, merger, extra_info, bound_low, bl_incl, bound_high, bh_incl) );
     result->op = EQUAL;
     
     typename std::map<KType*,AType*>::const_iterator a_iter = a->others.begin();
