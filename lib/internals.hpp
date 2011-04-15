@@ -367,7 +367,7 @@ private:
     TreeNode<KType, AType> *int_1=NULL, *int_2=NULL, *int_3=NULL;
     RangeOperator_t sep_1=INVALID, sep_2=INVALID;
     KType *sep_1_val=NULL, *sep_2_val=NULL;
-    if(a_separator == b_separator) {
+    if(*a_separator == *b_separator) {
       int_1 = merge(a->left_interval(),
                     b->left_interval(),
                     merger, extra_info);
@@ -387,7 +387,7 @@ private:
         sep_1 = LESS_THAN;
         sep_2 = LESS_EQUAL_THAN;
       } 
-    } else if(a_separator < b_separator) {
+    } else if(*a_separator < *b_separator) {
       int_1 = merge(a->left_interval(),
                     b->left_interval(),
                     merger, extra_info);
@@ -402,7 +402,7 @@ private:
       sep_1_val = a_separator;
       sep_2_val = b_separator;
     } else {
-      // a_separator > b_separator
+      // *a_separator > *b_separator
       int_1 = merge(a->left_interval(),
                     b->left_interval(),
                     merger, extra_info);
