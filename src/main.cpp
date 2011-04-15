@@ -48,9 +48,23 @@ MyTest* MyTest::instance = NULL;
 void print_mapping(Range<string,string> &map, string *key){
   cout << "'" << (*key) << "' mapped to: '" << *(map.find(key)) << "'" << endl;
 }
+void print_mapping_int(Range<int,string> &map, int *key){
+  cout << "'" << (*key) << "' mapped to: '" << *(map.find(key)) << "'" << endl;
+}
 
 void pr_indent(int i){ for(; i; --i) cout << " "; }
 void cb_range(RangeOperator_t r, string *s, void *ptr){
+  stack<int> *stk = (stack<int>*)ptr;
+  int indent = stk->top();
+  stk->pop();
+
+  pr_indent(indent);
+  cout << "RANGE: " << r << " for " << *s << endl;
+  ++indent;
+  stk->push(indent);
+  stk->push(indent);
+}
+void cb_range_int(RangeOperator_t r, int *s, void *ptr){
   stack<int> *stk = (stack<int>*)ptr;
   int indent = stk->top();
   stk->pop();
@@ -77,6 +91,22 @@ void cb_punt(RangeOperator_t r, std::map<string*,string*> m, void *ptr){
   }
   stk->push(indent);
 }
+void cb_punt_int(RangeOperator_t r, std::map<int*,string*> m, void *ptr){
+  stack<int> *stk = (stack<int>*)ptr;
+  int indent = stk->top();
+  stk->pop();
+
+  pr_indent(indent);
+  cout << "PUNT: " << endl;
+  ++indent;
+  for(std::map<int*,string*>::iterator iter = m.begin();
+      iter != m.end();
+      ++iter) {
+    pr_indent(indent);
+    cout << "{"<< *(iter->first) <<"} => {"<< *(iter->second) <<"}" << endl;
+  }
+  stk->push(indent);
+}
 void cb_action(string *s, void *ptr){
   stack<int> *stk = (stack<int>*)ptr;
   int indent = stk->top();
@@ -91,6 +121,12 @@ void do_traversal(Range<string,string> &map){
   map.traverse(cb_range, cb_punt, cb_action, &stk);
 }
 
+void do_traversal_int(Range<int,string> &map){
+  stack<int> stk;
+  stk.push(0);
+  map.traverse(cb_range_int, cb_punt_int, cb_action, &stk);
+}
+
 int main(){
   MyTest t;
 
@@ -103,6 +139,7 @@ int main(){
   string *c_k = new string("chiave_c");
   string *c_val= new string("valore_c");
 
+  cout << "======== r1 ========" << endl;
   Range<string,string> r1(dfl_val_1);
   r1.addRange(EQUAL, b_k, b_val);
   print_mapping(r1, a_k);
@@ -110,6 +147,7 @@ int main(){
   print_mapping(r1, c_k);
   do_traversal(r1);
 
+  cout << "======== r2 ========" << endl;
   Range<string,string> r2(dfl_val_2);
   r2.addRange(LESS_THAN, c_k, c_val);
   print_mapping(r2, a_k);
@@ -117,9 +155,63 @@ int main(){
   print_mapping(r2, c_k);
   do_traversal(r2);
 
+  cout << "======== r3 ========" << endl;
   Range<string,string> r3 = Range<string,string>::intersect(r1, r2, &MyTest::mywrapper, NULL);
   print_mapping(r3, a_k);
   print_mapping(r3, b_k);
   print_mapping(r3, c_k);
   do_traversal(r3);
+
+  cout << endl << endl;
+
+  int v_a = 80, v_b = 1024, v_c = 32000;
+  string *less_than_1024 = new string("lesser than 1024");
+  string *eq_to_80 = new string("equal to 80");
+  string *great_eq_32000 = new string("greater than or equal to 32000");
+  string *dfl_val_3 = new string("DEFAULT3");
+
+  cout << "======== rint1 ========" << endl;
+  Range<int, string> rint1(dfl_val_1);
+  rint1.addRange(LESS_THAN, &v_b, less_than_1024);
+  print_mapping_int(rint1, &v_a);
+  print_mapping_int(rint1, &v_b);
+  print_mapping_int(rint1, &v_c);
+  do_traversal_int(rint1);
+
+  cout << "======== rint2 ========" << endl;
+  Range<int, string> rint2(dfl_val_2);
+  rint2.addRange(EQUAL, &v_a, eq_to_80);
+  print_mapping_int(rint2, &v_a);
+  print_mapping_int(rint2, &v_b);
+  print_mapping_int(rint2, &v_c);
+  do_traversal_int(rint2);
+
+  cout << "======== rint3 ========" << endl;
+  Range<int, string> rint3(dfl_val_3);
+  rint3.addRange(GREAT_EQUAL_THAN, &v_c, great_eq_32000);
+  print_mapping_int(rint3, &v_a);
+  print_mapping_int(rint3, &v_b);
+  print_mapping_int(rint3, &v_c);
+  do_traversal_int(rint3);
+
+  cout << "======== rint4 ========" << endl;
+  Range<int,string> rint4 = Range<int,string>::intersect(rint1, rint2, &MyTest::mywrapper, NULL);
+  print_mapping_int(rint4, &v_a);
+  print_mapping_int(rint4, &v_b);
+  print_mapping_int(rint4, &v_c);
+  do_traversal_int(rint4);
+
+  cout << "======== rint5 ========" << endl;
+  Range<int,string> rint5 = Range<int,string>::intersect(rint4, rint3, &MyTest::mywrapper, NULL);
+  print_mapping_int(rint5, &v_a);
+  print_mapping_int(rint5, &v_b);
+  print_mapping_int(rint5, &v_c);
+  do_traversal_int(rint5);
+
+  cout << "======== rint6 ========" << endl;
+  Range<int,string> rint6 = Range<int,string>::intersect(rint2, rint3, &MyTest::mywrapper, NULL);
+  print_mapping_int(rint6, &v_a);
+  print_mapping_int(rint6, &v_b);
+  print_mapping_int(rint6, &v_c);
+  do_traversal_int(rint6);
 }
