@@ -214,4 +214,18 @@ int main(){
   print_mapping_int(rint6, &v_b);
   print_mapping_int(rint6, &v_c);
   do_traversal_int(rint6);
+
+  cout << "======== rint7 ========" << endl;
+  Range<int,string> rint7 = Range<int,string>::intersect(rint6, rint1, &MyTest::mywrapper, NULL);
+  print_mapping_int(rint7, &v_a);
+  print_mapping_int(rint7, &v_b);
+  print_mapping_int(rint7, &v_c);
+  do_traversal_int(rint7);
+
+  cout << "======== rint8 ========" << endl;
+  Range<int,string> rint8 = Range<int,string>::intersect(rint1, rint6, &MyTest::mywrapper, NULL);
+  print_mapping_int(rint8, &v_a);
+  print_mapping_int(rint8, &v_b);
+  print_mapping_int(rint8, &v_c);
+  do_traversal_int(rint8);
 }
