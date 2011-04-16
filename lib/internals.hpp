@@ -531,7 +531,7 @@ private:
                                                       const KType *bound_low, const bool bl_incl,
                                                       const KType *bound_high, const bool bh_incl)
   {
-#warning update to account boundaries
+#warning Can i handle better account boundaries? Like avoiding to create the top-RangedOpNode at all if possible (if it can happen in reality)
     KType *a_separator = a->range_separator;
     const RangeOperator_t a_op = a->getOp();
     const RangeOperator_t a_norm_op = a->getNormalizedOp();
@@ -542,21 +542,30 @@ private:
     // While building, I keep temporary variables of type PunctOpNode for the children
     PunctOpNode<KType, AType> *tmp_child_left = NULL, *tmp_child_right=NULL;
 
-    // separate left-hand punctual values from right-hand ones
+    // first skip all the punctual values below the lower bound
+    typename std::map<KType*,AType*>::const_iterator iter;
+    for (iter = b->others.begin();
+         is_out_of_low_bound(iter->first, bound_low, bl_incl) &&
+           iter != b->others.end();
+         ++iter)
+      ;
+
+    // now separate left-hand punctual values from right-hand ones,
+    // bailing out early if going through the upper bound
     bool scanning_left_side = true;
-    for(typename std::map<KType*,AType*>::const_iterator i = b->others.begin();
-        i != b->others.end();
-        ++i) {
+    for(; !is_out_of_high_bound(iter->first, bound_high, bh_incl) &&
+          iter != b->others.end();
+        ++iter) {
       if (scanning_left_side && ( a_norm_op == LESS_THAN ?
-                                  *(i->first) < *a_separator :
-                                  *(i->first) <= *a_separator ))
+                                  *(iter->first) < *a_separator :
+                                  *(iter->first) <= *a_separator ))
       {
         // the current punctual value must go in the left child
         if (!tmp_child_left) {
           tmp_child_left = new PunctOpNode<KType, AType>(b->dfl_node);
           tmp_child_left->op = EQUAL;
         }
-        tmp_child_left->addPuntAction(i->first, i->second);
+        tmp_child_left->addPuntAction(iter->first, iter->second);
       } else {
         // the current punctual value must go in the right child
         scanning_left_side = false;
@@ -564,7 +573,7 @@ private:
           tmp_child_right = new PunctOpNode<KType, AType>(b->dfl_node);
           tmp_child_right->op = EQUAL;
         }
-        tmp_child_right->addPuntAction(i->first, i->second);
+        tmp_child_right->addPuntAction(iter->first, iter->second);
       }
     }
 
@@ -575,12 +584,14 @@ private:
                                                 a->range_node : a->dfl_node ),
                                                (tmp_child_left? tmp_child_left : b->dfl_node),
                                                merger, extra_info,
-                                               bound_low, bl_incl, bound_high, bh_incl);
+                                               bound_low, bl_incl,
+                                               a_separator, a_norm_op == LESS_EQUAL_THAN);
     TreeNode<KType, AType> *child_right = merge((a_op == LESS_THAN || a_op == LESS_EQUAL_THAN ?
                                                  a->dfl_node : a->range_node ),
                                                 (tmp_child_right? tmp_child_right : b->dfl_node),
                                                 merger, extra_info,
-                                                bound_low, bl_incl, bound_high, bh_incl);
+                                                a_separator, a_norm_op == LESS_THAN,
+                                                bound_high, bh_incl);
 
     result = new RangeOpNode<KType, AType>(child_right);
     result->op = a_norm_op;
