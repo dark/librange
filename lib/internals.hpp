@@ -468,9 +468,8 @@ private:
       sep_1_val = range_left->range_separator;
       sep_2_val = range_right->range_separator;
 
-      int_1 = (bound_low &&
-               ( (sep_1 == LESS_EQUAL_THAN && bl_incl && *bound_low > *sep_1_val)
-                 || *bound_low >= *sep_1_val )
+      int_1 = (is_out_of_low_bound(sep_1_val, bound_low,
+                                   sep_1 == LESS_EQUAL_THAN && bl_incl)
                ? NULL :
                merge(range_left->left_interval(),
                      range_right->left_interval(),
@@ -481,9 +480,8 @@ private:
                     range_right->left_interval(),
                     merger, extra_info,
                     sep_1_val, sep_1 == LESS_THAN, sep_2_val, sep_2 == LESS_EQUAL_THAN);
-      int_3 = (bound_high &&
-               ( (sep_2 == LESS_THAN && bh_incl && *bound_high < *sep_2_val)
-                 || *bound_high <= *sep_2_val )
+      int_3 = (is_out_of_high_bound(sep_2_val, bound_low,
+                                    sep_2 == LESS_THAN && bh_incl)
                ? NULL :
                merge(range_left->right_interval(),
                      range_right->right_interval(),
