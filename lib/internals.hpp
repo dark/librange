@@ -367,7 +367,6 @@ private:
                                                       const KType *bound_low, const bool bl_incl,
                                                       const KType *bound_high, const bool bh_incl)
   {
-#warning update to account boundaries
     KType *a_separator = a->range_separator;
     KType *b_separator = b->range_separator;
 
@@ -377,80 +376,95 @@ private:
     RangeOperator_t sep_1=INVALID, sep_2=INVALID;
     KType *sep_1_val=NULL, *sep_2_val=NULL;
     if(*a_separator == *b_separator) {
-      int_1 = merge(a->left_interval(),
-                    b->left_interval(),
-                    merger, extra_info,
-                    bound_low, bl_incl, bound_high, bh_incl);
-      int_3 = merge(a->right_interval(),
-                    b->right_interval(),
-                    merger, extra_info,
-                    bound_low, bl_incl, bound_high, bh_incl);
+      // A quick mental survey led me to believe that can be no
+      // boundaries issues in this subcase. Boundaries only have to be
+      // propagated down in the recursion chain.
       sep_1 = a->getNormalizedOp();
       sep_2 = b->getNormalizedOp();
       sep_1_val = sep_2_val = a_separator;
+      int_1 = merge(a->left_interval(),
+                    b->left_interval(),
+                    merger, extra_info,
+                    bound_low, bl_incl, sep_1_val,
+                    sep_1 == LESS_EQUAL_THAN && sep_2 == LESS_EQUAL_THAN);
+      int_3 = merge(a->right_interval(),
+                    b->right_interval(),
+                    merger, extra_info,
+                    sep_2_val, sep_1 == LESS_THAN && sep_2 == LESS_THAN,
+                    bound_high, bh_incl);
       if(a->getNormalizedOp() != b->getNormalizedOp()) {
         // there is a small "gap" between the intervals (as in '<x' and '>x')
         // or they are overlapped ('<=x' and '>=x')
         // handle both cases here
+        sep_1 = LESS_THAN;
+        sep_2 = LESS_EQUAL_THAN;
         int_2 = merge((sep_1 == LESS_THAN? a->right_interval() : a->left_interval() ),
                       (sep_1 == LESS_THAN? a->left_interval() : a->right_interval() ),
                       merger, extra_info,
-                      bound_low, bl_incl, bound_high, bh_incl);
-        sep_1 = LESS_THAN;
-        sep_2 = LESS_EQUAL_THAN;
+                      sep_1_val, true, sep_2_val, true);
       } 
-    } else if(*a_separator < *b_separator) {
-      int_1 = merge(a->left_interval(),
-                    b->left_interval(),
-                    merger, extra_info,
-                    bound_low, bl_incl, bound_high, bh_incl);
-      int_2 = merge(a->right_interval(),
-                    b->left_interval(),
-                    merger, extra_info,
-                    bound_low, bl_incl, bound_high, bh_incl);
-      int_3 = merge(a->right_interval(),
-                    b->right_interval(),
-                    merger, extra_info,
-                    bound_low, bl_incl, bound_high, bh_incl);
-      sep_1 = a->getNormalizedOp();
-      sep_2 = b->getNormalizedOp();
-      sep_1_val = a_separator;
-      sep_2_val = b_separator;
     } else {
-      // *a_separator > *b_separator
-      int_1 = merge(a->left_interval(),
-                    b->left_interval(),
+      // *a_separator != *b_separator
+      const RangeOpNode<KType, AType> *range_left = (*a_separator < *b_separator? a : b);
+      const RangeOpNode<KType, AType> *range_right = (*a_separator < *b_separator? b : a);
+      sep_1 = range_left->getNormalizedOp();
+      sep_2 = range_right->getNormalizedOp();
+      sep_1_val = range_left->range_separator;
+      sep_2_val = range_right->range_separator;
+
+      int_1 = (bound_low &&
+               ( (sep_1 == LESS_EQUAL_THAN && bl_incl && *bound_low > *sep_1_val)
+                 || *bound_low >= *sep_1_val )
+               ? NULL :
+               merge(range_left->left_interval(),
+                     range_right->left_interval(),
+                     merger, extra_info,
+                     bound_low, bl_incl, sep_1_val, sep_1 == LESS_EQUAL_THAN)
+        );
+      int_2 = merge(range_left->right_interval(),
+                    range_right->left_interval(),
                     merger, extra_info,
-                    bound_low, bl_incl, bound_high, bh_incl);
-      int_2 = merge(a->left_interval(),
-                    b->right_interval(),
-                    merger, extra_info,
-                    bound_low, bl_incl, bound_high, bh_incl);
-      int_3 = merge(a->right_interval(),
-                    b->right_interval(),
-                    merger, extra_info,
-                    bound_low, bl_incl, bound_high, bh_incl);
-      sep_1 = b->getNormalizedOp();
-      sep_2 = a->getNormalizedOp();
-      sep_1_val = b_separator;
-      sep_2_val = a_separator;
+                    sep_1_val, sep_1 == LESS_THAN, sep_2_val, sep_2 == LESS_EQUAL_THAN);
+      int_3 = (bound_high &&
+               ( (sep_2 == LESS_THAN && bh_incl && *bound_high < *sep_2_val)
+                 || *bound_high <= *sep_2_val )
+               ? NULL :
+               merge(range_left->right_interval(),
+                     range_right->right_interval(),
+                     merger, extra_info,
+                     sep_2_val, sep_2 == LESS_THAN, bound_high, bh_incl)
+        );
     }
+
+    // From the above, only one among int_1, int_2 or int_3 can be
+    // NULL. I'll act accordingly.
         
     // if int_2 == NULL, sep_2 will be ignored
-    if (int_2 != NULL) {
-      RangeOpNode<KType,AType> *tmp = new RangeOpNode<KType,AType>(int_3);
-      tmp->op = sep_2;
-      tmp->range_separator = sep_2_val;
-      tmp->range_node = int_2;
+    if (int_2) {
+      if (int_3) {
+        RangeOpNode<KType,AType> *tmp = new RangeOpNode<KType,AType>(int_3);
+        tmp->op = sep_2;
+        tmp->range_separator = sep_2_val;
+        tmp->range_node = int_2;
 
-      int_2 = tmp;
+        int_2 = tmp;
+      }
+      // else do nothing, int_2 is good as is
     } else
       int_2 = int_3;
 
-    RangeOpNode<KType, AType> *result = new RangeOpNode<KType,AType>(int_2);
-    result->op = sep_1;
-    result->range_separator = sep_1_val;
-    result->range_node = int_1;
+    RangeOpNode<KType, AType> *result;
+    if (int_1) {
+      result = new RangeOpNode<KType,AType>(int_2);
+      result->op = sep_1;
+      result->range_separator = sep_1_val;
+      result->range_node = int_1;
+    }
+    else {
+      // this is always legal because of the code paths above and the
+      // fact that only one among int_1, int_2 and int_3 can be NULL
+      result = dynamic_cast<RangeOpNode<KType, AType> *>(int_2);
+    }
 
     return result;
   }
