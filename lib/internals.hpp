@@ -367,21 +367,22 @@ public:
       const PunctOpNode<KType, AType> *a_prom_punct = dynamic_cast<const PunctOpNode<KType, AType>*>(a);
       if (!a_prom_punct) abort(); // something broke
 
-      PunctOpNode<KType, AType> *result_punct = NULL;
       switch(b_type){
       case PUNCTUAL:
         {
           // the right node is a PunctOpNode
           const PunctOpNode<KType, AType> *b_prom_punct = dynamic_cast<const PunctOpNode<KType, AType>*>(b);
           if (!b_prom_punct) abort(); // something broke
-          result_punct = merge_punct_punct(a_prom_punct, b_prom_punct, merger, extra_info,
-                                           bound_low, bl_incl, bound_high, bh_incl);
+          return merge_punct_punct(a_prom_punct, b_prom_punct, merger, extra_info,
+                                   bound_low, bl_incl, bound_high, bh_incl);
           break;
         }
 
       case ACTION:
         { 
           // the right node is a ActionNode
+          PunctOpNode<KType, AType> *result_punct = NULL;
+
           TreeNode<KType, AType> *new_dfl_node = merge(a_prom_punct->dfl_node, b, merger, extra_info, bound_low, bl_incl, bound_high, bh_incl);
           const AType *b_action = dynamic_cast<const ActionNode<KType, AType>*>(b)->action;
 
@@ -403,14 +404,15 @@ public:
           if (!result_punct) // boundaries prevented me from adding any value to result_punct
             return new_dfl_node;
 
-          break;
+          return result_punct;
         }
 
       default: abort(); // something went wrong
-      }
+      } // end of: switch(b_type)
 
-      return result_punct;
-    } else {
+      abort(); // I should have returned something above
+    } // end of: else if (a_type == PUNCTUAL)
+    else {
       abort(); // something broke in the comparisons above
     }
   }
@@ -588,41 +590,65 @@ private:
     return result;
   }
 
-  static PunctOpNode<KType, AType>* merge_punct_punct(const PunctOpNode<KType, AType> *a,
-                                                      const PunctOpNode<KType, AType> *b,
-                                                      merger_func_t merger, void *extra_info,
-                                                      const KType *bound_low, const bool bl_incl,
-                                                      const KType *bound_high, const bool bh_incl)
+  static TreeNode<KType, AType>* merge_punct_punct(const PunctOpNode<KType, AType> *a,
+                                                   const PunctOpNode<KType, AType> *b,
+                                                   merger_func_t merger, void *extra_info,
+                                                   const KType *bound_low, const bool bl_incl,
+                                                   const KType *bound_high, const bool bh_incl)
   {
-#warning update to account boundaries
     const ActionNode<KType, AType> *a_dfl = dynamic_cast<const ActionNode<KType, AType>*>(a->dfl_node);
     const ActionNode<KType, AType> *b_dfl = dynamic_cast<const ActionNode<KType, AType>*>(b->dfl_node);
     if (!a_dfl || !b_dfl) abort(); // something broke
 
-    PunctOpNode<KType, AType> *result = new PunctOpNode<KType, AType>( merge(a->dfl_node, b->dfl_node, merger, extra_info, bound_low, bl_incl, bound_high, bh_incl) );
+    TreeNode<KType, AType> *merged_dfl = merge(a->dfl_node, b->dfl_node, merger, extra_info, bound_low, bl_incl, bound_high, bh_incl);
+    PunctOpNode<KType, AType> *result = new PunctOpNode<KType, AType>(merged_dfl);
     result->op = EQUAL;
     
     typename std::map<KType*,AType*>::const_iterator a_iter = a->others.begin();
     typename std::map<KType*,AType*>::const_iterator b_iter = b->others.begin();
     for (; a_iter != a->others.end() && b_iter != b->others.end() ; ) {
+      // need to account both the lower and the higher bounds in all subcases
       if( *(a_iter->first) < *(b_iter->first) ) {
-        result->others[a_iter->first]=(*merger)(a_iter->second, b_dfl->action, extra_info);
-        ++a_iter;
+        if(!is_out_of_low_bound(a_iter->first, bound_low, bl_incl))
+          result->others[a_iter->first]=(*merger)(a_iter->second, b_dfl->action, extra_info);
+
+        if(is_out_of_high_bound(a_iter->first, bound_high, bh_incl))
+          break; // all the following in both 'a' and 'b' will be out of upper bound
+
+        ++a_iter; // advance the iterator
       } else if ( *(a_iter->first) > *(b_iter->first) ) {
-        result->others[b_iter->first]=(*merger)(a_dfl->action, b_iter->second, extra_info);
-        ++b_iter;
+        if(!is_out_of_low_bound(b_iter->first, bound_low, bl_incl))
+          result->others[b_iter->first]=(*merger)(a_dfl->action, b_iter->second, extra_info);
+
+        if(is_out_of_high_bound(b_iter->first, bound_high, bh_incl))
+          break; // all the following in both 'a' and 'b' will be out of upper bound
+
+        ++b_iter; // advance the iterator
       } else { // if *(a_iter->first) == *(b_iter->first) )
-        result->others[a_iter->first]=(*merger)(a_iter->second, b_iter->second, extra_info);
+        if(!is_out_of_low_bound(a_iter->first, bound_low, bl_incl))
+          result->others[a_iter->first]=(*merger)(a_iter->second, b_iter->second, extra_info);
+
+        if(is_out_of_high_bound(a_iter->first, bound_high, bh_incl))
+          break; // all the following in both 'a' and 'b' will be out of upper bound
+
         ++a_iter;
         ++b_iter;
       }
     }
 
     // add the remaining mappings
-    for (; a_iter != a->others.end(); ++a_iter)
+    for (; !is_out_of_high_bound(a_iter->first, bound_high, bh_incl)
+           && a_iter != a->others.end(); ++a_iter)
       result->others[a_iter->first]=(*merger)(a_iter->second, b_dfl->action, extra_info);
-    for (; b_iter != b->others.end(); ++b_iter)
+    for (; !is_out_of_high_bound(b_iter->first, bound_high, bh_incl)
+           && b_iter != b->others.end(); ++b_iter)
       result->others[b_iter->first]=(*merger)(a_dfl->action, b_iter->second, extra_info);
+
+    if(result->others.size() == 0) {
+      // everything was out of bound
+      delete result;
+      return merged_dfl;
+    }
 
     return result;
   }
