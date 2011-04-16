@@ -281,7 +281,7 @@ public:
       const RangeOpNode<KType, AType> *a_prom_range = dynamic_cast<const RangeOpNode<KType, AType>*>(a);
       if (!a_prom_range) abort(); // something broke
 
-      RangeOpNode<KType, AType> *result_range;
+      RangeOpNode<KType, AType> *result_range = NULL;
       switch(b_type){
       case RANGE:
         {
@@ -306,12 +306,56 @@ public:
       case ACTION:
         {
           // the right node is a ActionNode
-          const TreeNode<KType, AType> *new_dfl_node = merge(a_prom_range->dfl_node, b, merger, extra_info, bound_low, bl_incl, bound_high, bh_incl);
-          result_range = new RangeOpNode<KType, AType>(new_dfl_node);
+          const RangeOperator_t a_op = a_prom_range->getOp();
+          TreeNode<KType, AType> *dfl_node = NULL;
+          TreeNode<KType, AType> *range_node = NULL;
+          if (a_op == LESS_THAN || a_op == LESS_EQUAL_THAN) {
+            // dfl_node must be checked for compatibility against the
+            // upper bound and range_node against the lower one
+            if(is_out_of_high_bound(a_prom_range->range_separator,
+                                    bound_high, bh_incl))
+              dfl_node = NULL;
+            else
+              dfl_node = merge(a_prom_range->dfl_node, b, merger, extra_info,
+                               a_prom_range->range_separator, a_op == LESS_THAN,
+                               bound_high, bh_incl);
+
+            if(is_out_of_low_bound(a_prom_range->range_separator,
+                                   bound_low, bl_incl))
+              range_node = NULL;
+            else
+              range_node = merge(a_prom_range->range_node, b, merger, extra_info,
+                                 bound_low, bl_incl,
+                                 a_prom_range->range_separator, a_op == LESS_EQUAL_THAN);
+          } else {
+            // ... the opposite :)
+            if(is_out_of_low_bound(a_prom_range->range_separator,
+                                   bound_low, bl_incl))
+              dfl_node = NULL;
+            else
+              dfl_node = merge(a_prom_range->dfl_node, b, merger, extra_info,
+                               bound_low, bl_incl,
+                               a_prom_range->range_separator, a_op == GREAT_THAN);
+
+            if(is_out_of_high_bound(a_prom_range->range_separator,
+                                    bound_high, bh_incl))
+              range_node = NULL;
+            else
+              range_node = merge(a_prom_range->range_node, b, merger, extra_info,
+                                 a_prom_range->range_separator, a_op == GREAT_EQUAL_THAN,
+                                 bound_high, bh_incl);
+          }
+
+          // only one among dfl_node or range_node can be out of bounds
+          if (dfl_node == NULL)
+            return range_node;
+          if (range_node == NULL)
+            return dfl_node;
+
+          result_range = new RangeOpNode<KType, AType>(dfl_node);
           result_range->op = a_prom_range->op;
           result_range->range_separator = a_prom_range->range_separator;
-          result_range->range_node = merge(a_prom_range->range_node, b, merger, extra_info,
-                                           bound_low, bl_incl, bound_high, bh_incl);
+          result_range->range_node = range_node;
 
           break;
         }
@@ -323,7 +367,7 @@ public:
       const PunctOpNode<KType, AType> *a_prom_punct = dynamic_cast<const PunctOpNode<KType, AType>*>(a);
       if (!a_prom_punct) abort(); // something broke
 
-      PunctOpNode<KType, AType> *result_punct;
+      PunctOpNode<KType, AType> *result_punct = NULL;
       switch(b_type){
       case PUNCTUAL:
         {
@@ -338,15 +382,27 @@ public:
       case ACTION:
         { 
           // the right node is a ActionNode
-          const TreeNode<KType, AType> *new_dfl_node = merge(a_prom_punct->dfl_node, b, merger, extra_info, bound_low, bl_incl, bound_high, bh_incl);
+          TreeNode<KType, AType> *new_dfl_node = merge(a_prom_punct->dfl_node, b, merger, extra_info, bound_low, bl_incl, bound_high, bh_incl);
           const AType *b_action = dynamic_cast<const ActionNode<KType, AType>*>(b)->action;
-          result_punct = new PunctOpNode<KType, AType>(new_dfl_node);
-          result_punct->op = EQUAL;
+
           for(typename std::map<KType*,AType*>::const_iterator i = a_prom_punct->others.begin();
               i != a_prom_punct->others.end();
-              ++i)
+              ++i) {
+            if ( is_out_of_low_bound(i->first, bound_low, bl_incl)
+                 || is_out_of_high_bound(i->first, bound_high, bh_incl) )
+              // check for boundaries
+              continue;
+
+            if (!result_punct) {
+              result_punct = new PunctOpNode<KType, AType>(new_dfl_node);
+              result_punct->op = EQUAL;
+            }
             result_punct->others[i->first]=(*merger)(i->second, b_action, extra_info);
-          
+          }
+
+          if (!result_punct) // boundaries prevented me from adding any value to result_punct
+            return new_dfl_node;
+
           break;
         }
 
