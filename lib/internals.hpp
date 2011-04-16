@@ -483,7 +483,7 @@ private:
     // The result of the merge will be a RangedOpNode at the top, with TreeNode(s)
     // below it (their type depends on the actual code path taken here).
     RangeOpNode<KType, AType> *result = NULL;
-    // While building, I keep temporary variables of PunctOpNode(s) for the children.
+    // While building, I keep temporary variables of type PunctOpNode for the children
     PunctOpNode<KType, AType> *tmp_child_left = NULL, *tmp_child_right=NULL;
 
     // separate left-hand punctual values from right-hand ones
