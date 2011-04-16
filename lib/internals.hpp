@@ -573,6 +573,21 @@ private:
     return result;
   }
 
+  inline static bool is_out_of_high_bound(const KType *val, const KType *high_bound,
+                                          bool bh_included)
+  {
+    return (high_bound &&
+            (bh_included ? *val > *high_bound : *val >= *high_bound)
+      );
+  }
+
+  inline static bool is_out_of_low_bound(const KType *val, const KType *low_bound,
+                                          bool bl_included)
+  {
+    return (low_bound &&
+            (bl_included ? *val < *low_bound : *val <= *low_bound)
+      );
+  }
 };
 
 
