@@ -48,6 +48,7 @@ public:
   virtual Node_t getType() const = 0;
   // must return NULL on lookup failure
   virtual AType* find(KType* key) const = 0;
+  virtual void grabAllActions(std::set<AType*>* actions) const = 0;
   virtual void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) const = 0;
 };
 
@@ -65,6 +66,7 @@ public:
   ActionNode(AType *action) : action(action){}
   Node_t getType() const { return ACTION; }
   AType* find(KType *key) const {return action;}
+  void grabAllActions(std::set<AType*>* actions) const {actions->insert(action);}
   void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) const
   { if (action_callback) (*action_callback)(action, extra_info); }
 
@@ -153,6 +155,11 @@ public:
     return this->dfl_node->find(key);
   }
 
+  void grabAllActions(std::set<AType*>* actions) const {
+    this->dfl_node->grabAllActions(actions);
+    range_node->grabAllActions(actions);
+  }
+
   void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) const
   {
     if (range_callback)
@@ -220,6 +227,14 @@ public:
     if (i == others.end())
       return this->dfl_node->find(key);
     return i->second;
+  }
+
+  void grabAllActions(std::set<AType*>* actions) const {
+    this->dfl_node->grabAllActions(actions);
+    for (typename std::map<KType*,AType*>::const_iterator i = others.begin();
+         i != others.end();
+         ++i)
+      actions->insert(i->second);
   }
 
   void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) const

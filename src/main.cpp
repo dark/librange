@@ -51,6 +51,14 @@ void print_mapping(Range<string,string> &map, string *key){
 void print_mapping_int(Range<int,string> &map, int *key){
   cout << "'" << (*key) << "' mapped to: '" << *(map.find(key)) << "'" << endl;
 }
+void print_all_int(Range<int,string> &map){
+  std::set<string*> ret_set = map.findAll();
+  int i = 0;
+  for (std::set<string*>::iterator iter = ret_set.begin();
+       iter != ret_set.end();
+       ++iter, ++i)
+    cout << "action-" << i << ": " << (**iter) << endl;
+}
 
 void pr_indent(int i){ for(; i; --i) cout << " "; }
 void cb_range(RangeOperator_t r, string *s, void *ptr){
@@ -176,6 +184,7 @@ int main(){
   print_mapping_int(rint1, &v_a);
   print_mapping_int(rint1, &v_b);
   print_mapping_int(rint1, &v_c);
+  print_all_int(rint1);
   do_traversal_int(rint1);
 
   cout << "======== rint2 ========" << endl;
@@ -184,6 +193,7 @@ int main(){
   print_mapping_int(rint2, &v_a);
   print_mapping_int(rint2, &v_b);
   print_mapping_int(rint2, &v_c);
+  print_all_int(rint2);
   do_traversal_int(rint2);
 
   cout << "======== rint3 ========" << endl;
@@ -192,6 +202,7 @@ int main(){
   print_mapping_int(rint3, &v_a);
   print_mapping_int(rint3, &v_b);
   print_mapping_int(rint3, &v_c);
+  print_all_int(rint3);
   do_traversal_int(rint3);
 
   cout << "======== rint4 ========" << endl;
@@ -199,6 +210,7 @@ int main(){
   print_mapping_int(rint4, &v_a);
   print_mapping_int(rint4, &v_b);
   print_mapping_int(rint4, &v_c);
+  print_all_int(rint4);
   do_traversal_int(rint4);
 
   cout << "======== rint5 ========" << endl;
@@ -206,6 +218,7 @@ int main(){
   print_mapping_int(rint5, &v_a);
   print_mapping_int(rint5, &v_b);
   print_mapping_int(rint5, &v_c);
+  print_all_int(rint5);
   do_traversal_int(rint5);
 
   cout << "======== rint6 ========" << endl;
@@ -213,6 +226,7 @@ int main(){
   print_mapping_int(rint6, &v_a);
   print_mapping_int(rint6, &v_b);
   print_mapping_int(rint6, &v_c);
+  print_all_int(rint6);
   do_traversal_int(rint6);
 
   cout << "======== rint7 ========" << endl;
@@ -220,6 +234,7 @@ int main(){
   print_mapping_int(rint7, &v_a);
   print_mapping_int(rint7, &v_b);
   print_mapping_int(rint7, &v_c);
+  print_all_int(rint7);
   do_traversal_int(rint7);
 
   cout << "======== rint8 ========" << endl;
@@ -227,5 +242,6 @@ int main(){
   print_mapping_int(rint8, &v_a);
   print_mapping_int(rint8, &v_b);
   print_mapping_int(rint8, &v_c);
+  print_all_int(rint8);
   do_traversal_int(rint8);
 }

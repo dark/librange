@@ -22,6 +22,7 @@
 #define RANGE_HPP_INCLUDED
 
 #include <map>
+#include <set>
 #include "common.h"
 #include "internals.hpp"
 
@@ -42,6 +43,7 @@ public:
   Range(AType *dfl_action);
   void addRange(RangeOperator_t op, KType *key, AType *action);
   AType* find(KType *key);
+  std::set<AType*> findAll();
   static Range intersect(Range a, Range b, merger_func_t merger, void *extra_info);
   void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info);
 
@@ -78,6 +80,17 @@ AType* Range<KType,AType>::find(KType *key){
   if (action == NULL)
     return default_action;
   return action;
+}
+
+/* returns all the actions */
+template <class KType, class AType>
+std::set<AType*> Range<KType,AType>::findAll(){
+  std::set<AType*> to_ret;
+
+  to_ret.insert(default_action);
+  tree->grabAllActions(&to_ret);
+
+  return to_ret;
 }
 
 template <class KType, class AType>
