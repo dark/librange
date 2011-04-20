@@ -45,6 +45,7 @@ class TreeNode
   typedef void(*action_callback_func_t)(AType*, void*);
 
 public:
+  virtual TreeNode* clone() const = 0;
   virtual Node_t getType() const = 0;
   // must return NULL on lookup failure
   virtual AType* find(KType* key) const = 0;
@@ -64,6 +65,7 @@ class ActionNode : public TreeNode<KType,AType>
 
 public:
   ActionNode(AType *action) : action(action){}
+  virtual ActionNode* clone() const { return new ActionNode(action); }
   Node_t getType() const { return ACTION; }
   AType* find(KType *key) const {return action;}
   void grabAllActions(std::set<AType*>* actions) const {actions->insert(action);}
@@ -81,6 +83,7 @@ class OpNode : public TreeNode<KType,AType>
   friend class TreeMerger<KType, AType>;
 
 public:
+  virtual OpNode* clone() const = 0;
   static OpNode* buildOpNode(AType *dfl_action, RangeOperator_t op, KType *key, AType *cond_action);
   virtual void addRange(RangeOperator_t op, KType *key, AType *cond_action) = 0;
   inline RangeOperator_t getOp() const {return op;}
@@ -112,6 +115,15 @@ public:
     : range_separator(NULL), range_node(NULL)
   {
     this->dfl_node = new ActionNode<KType,AType>(outside_action);
+  }
+
+  RangeOpNode* clone() const {
+    RangeOpNode *result = new RangeOpNode(this->dfl_node->clone());
+    result->op = this->op;
+    result->range_separator = this->range_separator;
+    result->range_node = this->range_node->clone();
+
+    return result;
   }
 
   Node_t getType() const { return RANGE; }
@@ -210,6 +222,14 @@ public:
   PunctOpNode(AType *default_action)
   {
     this->dfl_node = new ActionNode<KType,AType>(default_action);
+  }
+
+  PunctOpNode* clone() const {
+    PunctOpNode *result = new PunctOpNode(this->dfl_node->clone());
+    result->op = this->op;
+    result->others = this->others;
+
+    return result;
   }
 
   Node_t getType() const { return PUNCTUAL; }

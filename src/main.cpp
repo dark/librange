@@ -244,4 +244,20 @@ int main(){
   print_mapping_int(rint8, &v_c);
   print_all_int(rint8);
   do_traversal_int(rint8);
+
+  cout << "======== rint9 ========" << endl;
+  Range<int,string> rint9 = Range<int,string>(rint8);
+  print_mapping_int(rint9, &v_a);
+  print_mapping_int(rint9, &v_b);
+  print_mapping_int(rint9, &v_c);
+  print_all_int(rint9);
+  do_traversal_int(rint9);
+
+  cout << "======== rint10_ptr ========" << endl;
+  Range<int,string> *rint10_ptr = new Range<int,string>(rint8);
+  print_mapping_int(*rint10_ptr, &v_a);
+  print_mapping_int(*rint10_ptr, &v_b);
+  print_mapping_int(*rint10_ptr, &v_c);
+  print_all_int(*rint10_ptr);
+  do_traversal_int(*rint10_ptr);
 }

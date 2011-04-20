@@ -41,6 +41,8 @@ class Range
 
 public:
   Range(AType *dfl_action);
+  Range(const Range &other);
+  Range(const Range *other);
   void addRange(RangeOperator_t op, KType *key, AType *action);
   AType* find(KType *key);
   std::set<AType*> findAll();
@@ -58,6 +60,20 @@ template <class KType, class AType>
 Range<KType,AType>::Range(AType *dfl_action)
   : default_action(dfl_action), tree(NULL)
 {
+}
+
+template <class KType, class AType>
+Range<KType,AType>::Range(const Range<KType,AType> &other)
+  : default_action(other.default_action)
+{
+  this->tree = other.tree->clone();
+}
+
+template <class KType, class AType>
+Range<KType,AType>::Range(const Range<KType,AType> *other)
+  : default_action(other->default_action)
+{
+  this->tree = other->tree->clone();
 }
 
 template <class KType, class AType>
