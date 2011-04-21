@@ -95,7 +95,7 @@ public:
   }
 
 protected:
-  const TreeNode<KType,AType> *dfl_node;
+  TreeNode<KType,AType> *dfl_node;
   RangeOperator_t op;
 };
 
@@ -184,7 +184,7 @@ private:
   KType range_separator;
   TreeNode<KType,AType> *range_node;
 
-  RangeOpNode(const TreeNode<KType,AType> *dfl_node)
+  RangeOpNode(TreeNode<KType,AType> *dfl_node)
     : range_node(NULL)
   {
     this->dfl_node = dfl_node; 
@@ -270,7 +270,7 @@ private:
   // the AType(s), rather than connecting to ActionNode(s) or TreeNode(s)
   std::map<KType,AType> others;
 
-  PunctOpNode(const TreeNode<KType,AType> *dfl_node)
+  PunctOpNode(TreeNode<KType,AType> *dfl_node)
   {
     this->dfl_node = dfl_node; 
   }
