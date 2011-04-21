@@ -40,16 +40,15 @@ class TreeNode
 {
   friend class TreeMerger<KType, AType>;
 
-  typedef void(*range_callback_func_t)(RangeOperator_t, KType*, void*);
-  typedef void(*punt_callback_func_t)(RangeOperator_t, std::map<KType*,AType*>, void*);
-  typedef void(*action_callback_func_t)(AType*, void*);
+  typedef void(*range_callback_func_t)(RangeOperator_t, KType, void*);
+  typedef void(*punt_callback_func_t)(RangeOperator_t, const std::map<KType,AType>&, void*);
+  typedef void(*action_callback_func_t)(AType, void*);
 
 public:
   virtual TreeNode* clone() const = 0;
   virtual Node_t getType() const = 0;
-  // must return NULL on lookup failure
-  virtual AType* find(KType* key) const = 0;
-  virtual void grabAllActions(std::set<AType*>* actions) const = 0;
+  virtual AType find(KType key) const = 0;
+  virtual void grabAllActions(std::set<AType>* actions) const = 0;
   virtual void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) const = 0;
 };
 
@@ -59,21 +58,21 @@ class ActionNode : public TreeNode<KType,AType>
 {
   friend class TreeMerger<KType, AType>;
 
-  typedef void(*range_callback_func_t)(RangeOperator_t, KType*, void*);
-  typedef void(*punt_callback_func_t)(RangeOperator_t, std::map<KType*,AType*>, void*);
-  typedef void(*action_callback_func_t)(AType*, void*);
+  typedef void(*range_callback_func_t)(RangeOperator_t, KType, void*);
+  typedef void(*punt_callback_func_t)(RangeOperator_t, const std::map<KType,AType>&, void*);
+  typedef void(*action_callback_func_t)(AType, void*);
 
 public:
-  ActionNode(AType *action) : action(action){}
+  ActionNode(AType action) : action(action){}
   virtual ActionNode* clone() const { return new ActionNode(action); }
   Node_t getType() const { return ACTION; }
-  AType* find(KType *key) const {return action;}
-  void grabAllActions(std::set<AType*>* actions) const {actions->insert(action);}
+  AType find(KType key) const {return action;}
+  void grabAllActions(std::set<AType>* actions) const {actions->insert(action);}
   void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) const
   { if (action_callback) (*action_callback)(action, extra_info); }
 
 private:
-  AType *action;
+  AType action;
 };
 
 
@@ -84,8 +83,8 @@ class OpNode : public TreeNode<KType,AType>
 
 public:
   virtual OpNode* clone() const = 0;
-  static OpNode* buildOpNode(AType *dfl_action, RangeOperator_t op, KType *key, AType *cond_action);
-  virtual void addRange(RangeOperator_t op, KType *key, AType *cond_action) = 0;
+  static OpNode* buildOpNode(AType dfl_action, RangeOperator_t op, KType key, AType cond_action);
+  virtual void addRange(RangeOperator_t op, KType key, AType cond_action) = 0;
   inline RangeOperator_t getOp() const {return op;}
   inline RangeOperator_t getNormalizedOp() const {
     if (op == LESS_THAN || op == GREAT_EQUAL_THAN)
@@ -106,13 +105,13 @@ class RangeOpNode : public OpNode<KType,AType>
 {
   friend class TreeMerger<KType, AType>;
 
-  typedef void(*range_callback_func_t)(RangeOperator_t, KType*, void*);
-  typedef void(*punt_callback_func_t)(RangeOperator_t, std::map<KType*,AType*>, void*);
-  typedef void(*action_callback_func_t)(AType*, void*);
+  typedef void(*range_callback_func_t)(RangeOperator_t, KType, void*);
+  typedef void(*punt_callback_func_t)(RangeOperator_t, const std::map<KType,AType>&, void*);
+  typedef void(*action_callback_func_t)(AType, void*);
 
 public:
-  RangeOpNode(AType *outside_action)
-    : range_separator(NULL), range_node(NULL)
+  RangeOpNode(AType outside_action)
+    : range_node(NULL)
   {
     this->dfl_node = new ActionNode<KType,AType>(outside_action);
   }
@@ -128,12 +127,12 @@ public:
 
   Node_t getType() const { return RANGE; }
 
-  void addRange(RangeOperator_t op, KType *key, AType *cond_action)
+  void addRange(RangeOperator_t op, KType key, AType cond_action)
   {
     if (op == EQUAL || op == INVALID)
       abort();
 
-    if (range_separator != NULL || range_node != NULL)
+    if (range_node != NULL)
       return; // ignore the tentative
 
     this->op = op;
@@ -141,20 +140,20 @@ public:
     range_node = new ActionNode<KType,AType>(cond_action);
   }
 
-  AType* find(KType* key) const {
+  AType find(KType key) const {
     bool res;
     switch(this->op){
     case LESS_THAN:
-      res = (*key) < (*range_separator);
+      res = (key < range_separator);
       break;
     case LESS_EQUAL_THAN:
-      res = (*key) <= (*range_separator);
+      res = (key <= range_separator);
       break;
     case GREAT_THAN:
-      res = (*key) > (*range_separator);
+      res = (key > range_separator);
       break;
     case GREAT_EQUAL_THAN:
-      res = (*key) >= (*range_separator);
+      res = (key >= range_separator);
       break;
     case EQUAL:
     case INVALID:
@@ -167,7 +166,7 @@ public:
     return this->dfl_node->find(key);
   }
 
-  void grabAllActions(std::set<AType*>* actions) const {
+  void grabAllActions(std::set<AType>* actions) const {
     this->dfl_node->grabAllActions(actions);
     range_node->grabAllActions(actions);
   }
@@ -182,11 +181,11 @@ public:
   }
 
 private:
-  KType *range_separator;
+  KType range_separator;
   TreeNode<KType,AType> *range_node;
 
   RangeOpNode(const TreeNode<KType,AType> *dfl_node)
-    : range_separator(NULL), range_node(NULL)
+    : range_node(NULL)
   {
     this->dfl_node = dfl_node; 
   }
@@ -214,12 +213,12 @@ class PunctOpNode : public OpNode<KType,AType>
 {
   friend class TreeMerger<KType, AType>;
 
-  typedef void(*range_callback_func_t)(RangeOperator_t, KType*, void*);
-  typedef void(*punt_callback_func_t)(RangeOperator_t, std::map<KType*,AType*>, void*);
-  typedef void(*action_callback_func_t)(AType*, void*);
+  typedef void(*range_callback_func_t)(RangeOperator_t, KType, void*);
+  typedef void(*punt_callback_func_t)(RangeOperator_t, const std::map<KType,AType>&, void*);
+  typedef void(*action_callback_func_t)(AType, void*);
 
 public:
-  PunctOpNode(AType *default_action)
+  PunctOpNode(AType default_action)
   {
     this->dfl_node = new ActionNode<KType,AType>(default_action);
   }
@@ -234,7 +233,7 @@ public:
 
   Node_t getType() const { return PUNCTUAL; }
 
-  void addRange(RangeOperator_t op, KType *key, AType *cond_action)
+  void addRange(RangeOperator_t op, KType key, AType cond_action)
   {
     if (op != EQUAL)
       abort();
@@ -242,16 +241,16 @@ public:
     addPuntAction(key, cond_action);
   }
 
-  AType* find(KType* key) const {
-    typename std::map<KType*,AType*>::const_iterator i = others.find(key);
+  AType find(KType key) const {
+    typename std::map<KType,AType>::const_iterator i = others.find(key);
     if (i == others.end())
       return this->dfl_node->find(key);
     return i->second;
   }
 
-  void grabAllActions(std::set<AType*>* actions) const {
+  void grabAllActions(std::set<AType>* actions) const {
     this->dfl_node->grabAllActions(actions);
-    for (typename std::map<KType*,AType*>::const_iterator i = others.begin();
+    for (typename std::map<KType,AType>::const_iterator i = others.begin();
          i != others.end();
          ++i)
       actions->insert(i->second);
@@ -269,14 +268,14 @@ public:
 private:
   // PunctOpNode(s) must be leaves in the tree, so they store directly
   // the AType(s), rather than connecting to ActionNode(s) or TreeNode(s)
-  std::map<KType*,AType*> others;
+  std::map<KType,AType> others;
 
   PunctOpNode(const TreeNode<KType,AType> *dfl_node)
   {
     this->dfl_node = dfl_node; 
   }
 
-  void addPuntAction(KType *key, AType *action){
+  void addPuntAction(KType key, AType action){
     others[key]=action;
   }
 };
@@ -284,7 +283,7 @@ private:
 template <class KType, class AType>
 class TreeMerger
 {
-  typedef AType*(*merger_func_t)(const AType*, const AType*, void*);
+  typedef AType(*merger_func_t)(const AType, const AType, void*);
 
 public:
   static TreeNode<KType, AType>* merge(const TreeNode<KType, AType> *a, const TreeNode<KType, AType> *b,
@@ -300,7 +299,7 @@ public:
       const ActionNode<KType, AType> *a_prom_action = dynamic_cast<const ActionNode<KType, AType>*>(a);
       const ActionNode<KType, AType> *b_prom_action = dynamic_cast<const ActionNode<KType, AType>*>(b);
       if (!a_prom_action || !b_prom_action) abort(); // something broke
-      AType *m = (*merger)(a_prom_action->action, b_prom_action->action, extra_info);
+      AType m = (*merger)(a_prom_action->action, b_prom_action->action, extra_info);
       return new ActionNode<KType, AType>(m);
     }
 
@@ -352,7 +351,7 @@ public:
               dfl_node = NULL;
             else
               dfl_node = merge(a_prom_range->dfl_node, b, merger, extra_info,
-                               a_prom_range->range_separator, a_op == LESS_THAN,
+                               &a_prom_range->range_separator, a_op == LESS_THAN,
                                bound_high, bh_incl);
 
             if(is_out_of_low_bound(a_prom_range->range_separator,
@@ -361,7 +360,7 @@ public:
             else
               range_node = merge(a_prom_range->range_node, b, merger, extra_info,
                                  bound_low, bl_incl,
-                                 a_prom_range->range_separator, a_op == LESS_EQUAL_THAN);
+                                 &a_prom_range->range_separator, a_op == LESS_EQUAL_THAN);
           } else {
             // ... the opposite :)
             if(is_out_of_low_bound(a_prom_range->range_separator,
@@ -370,14 +369,14 @@ public:
             else
               dfl_node = merge(a_prom_range->dfl_node, b, merger, extra_info,
                                bound_low, bl_incl,
-                               a_prom_range->range_separator, a_op == GREAT_THAN);
+                               &a_prom_range->range_separator, a_op == GREAT_THAN);
 
             if(is_out_of_high_bound(a_prom_range->range_separator,
                                     bound_high, bh_incl))
               range_node = NULL;
             else
               range_node = merge(a_prom_range->range_node, b, merger, extra_info,
-                                 a_prom_range->range_separator, a_op == GREAT_EQUAL_THAN,
+                                 &a_prom_range->range_separator, a_op == GREAT_EQUAL_THAN,
                                  bound_high, bh_incl);
           }
 
@@ -419,9 +418,9 @@ public:
           PunctOpNode<KType, AType> *result_punct = NULL;
 
           TreeNode<KType, AType> *new_dfl_node = merge(a_prom_punct->dfl_node, b, merger, extra_info, bound_low, bl_incl, bound_high, bh_incl);
-          const AType *b_action = dynamic_cast<const ActionNode<KType, AType>*>(b)->action;
+          const AType b_action = dynamic_cast<const ActionNode<KType, AType>*>(b)->action;
 
-          for(typename std::map<KType*,AType*>::const_iterator i = a_prom_punct->others.begin();
+          for(typename std::map<KType,AType>::const_iterator i = a_prom_punct->others.begin();
               i != a_prom_punct->others.end();
               ++i) {
             if ( is_out_of_low_bound(i->first, bound_low, bl_incl)
@@ -460,30 +459,31 @@ private:
                                                       const KType *bound_low, const bool bl_incl,
                                                       const KType *bound_high, const bool bh_incl)
   {
-    KType *a_separator = a->range_separator;
-    KType *b_separator = b->range_separator;
+    KType a_separator = a->range_separator;
+    KType b_separator = b->range_separator;
 
     // except when a_separator == b_separator, the intersection
     // between two ranges gives three intervals and two separators
     TreeNode<KType, AType> *int_1=NULL, *int_2=NULL, *int_3=NULL;
     RangeOperator_t sep_1=INVALID, sep_2=INVALID;
-    KType *sep_1_val=NULL, *sep_2_val=NULL;
-    if(*a_separator == *b_separator) {
+    KType sep_1_val, sep_2_val;
+    if(a_separator == b_separator) {
       // A quick mental survey led me to believe that can be no
       // boundaries issues in this subcase. Boundaries only have to be
       // propagated down in the recursion chain.
       sep_1 = a->getNormalizedOp();
       sep_2 = b->getNormalizedOp();
-      sep_1_val = sep_2_val = a_separator;
+      sep_1_val = a_separator;
+      sep_2_val = a_separator;
       int_1 = merge(a->left_interval(),
                     b->left_interval(),
                     merger, extra_info,
-                    bound_low, bl_incl, sep_1_val,
+                    bound_low, bl_incl, &sep_1_val,
                     sep_1 == LESS_EQUAL_THAN && sep_2 == LESS_EQUAL_THAN);
       int_3 = merge(a->right_interval(),
                     b->right_interval(),
                     merger, extra_info,
-                    sep_2_val, sep_1 == LESS_THAN && sep_2 == LESS_THAN,
+                    &sep_2_val, sep_1 == LESS_THAN && sep_2 == LESS_THAN,
                     bound_high, bh_incl);
       if(a->getNormalizedOp() != b->getNormalizedOp()) {
         // there is a small "gap" between the intervals (as in '<x' and '>x')
@@ -494,12 +494,12 @@ private:
         int_2 = merge((sep_1 == LESS_THAN? a->right_interval() : a->left_interval() ),
                       (sep_1 == LESS_THAN? a->left_interval() : a->right_interval() ),
                       merger, extra_info,
-                      sep_1_val, true, sep_2_val, true);
+                      &sep_1_val, true, &sep_2_val, true);
       } 
     } else {
-      // *a_separator != *b_separator
-      const RangeOpNode<KType, AType> *range_left = (*a_separator < *b_separator? a : b);
-      const RangeOpNode<KType, AType> *range_right = (*a_separator < *b_separator? b : a);
+      // a_separator != b_separator
+      const RangeOpNode<KType, AType> *range_left = (a_separator < b_separator? a : b);
+      const RangeOpNode<KType, AType> *range_right = (a_separator < b_separator? b : a);
       sep_1 = range_left->getNormalizedOp();
       sep_2 = range_right->getNormalizedOp();
       sep_1_val = range_left->range_separator;
@@ -511,19 +511,19 @@ private:
                merge(range_left->left_interval(),
                      range_right->left_interval(),
                      merger, extra_info,
-                     bound_low, bl_incl, sep_1_val, sep_1 == LESS_EQUAL_THAN)
+                     bound_low, bl_incl, &sep_1_val, sep_1 == LESS_EQUAL_THAN)
         );
       int_2 = merge(range_left->right_interval(),
                     range_right->left_interval(),
                     merger, extra_info,
-                    sep_1_val, sep_1 == LESS_THAN, sep_2_val, sep_2 == LESS_EQUAL_THAN);
+                    &sep_1_val, sep_1 == LESS_THAN, &sep_2_val, sep_2 == LESS_EQUAL_THAN);
       int_3 = (is_out_of_high_bound(sep_2_val, bound_low,
                                     sep_2 == LESS_THAN && bh_incl)
                ? NULL :
                merge(range_left->right_interval(),
                      range_right->right_interval(),
                      merger, extra_info,
-                     sep_2_val, sep_2 == LESS_THAN, bound_high, bh_incl)
+                     &sep_2_val, sep_2 == LESS_THAN, bound_high, bh_incl)
         );
     }
 
@@ -567,7 +567,7 @@ private:
                                                       const KType *bound_high, const bool bh_incl)
   {
 #warning Can i handle better account boundaries? Like avoiding to create the top-RangedOpNode at all if possible (if it can happen in reality)
-    KType *a_separator = a->range_separator;
+    KType a_separator = a->range_separator;
     const RangeOperator_t a_op = a->getOp();
     const RangeOperator_t a_norm_op = a->getNormalizedOp();
 
@@ -578,7 +578,7 @@ private:
     PunctOpNode<KType, AType> *tmp_child_left = NULL, *tmp_child_right=NULL;
 
     // first skip all the punctual values below the lower bound
-    typename std::map<KType*,AType*>::const_iterator iter;
+    typename std::map<KType,AType>::const_iterator iter;
     for (iter = b->others.begin();
          is_out_of_low_bound(iter->first, bound_low, bl_incl) &&
            iter != b->others.end();
@@ -592,8 +592,8 @@ private:
           iter != b->others.end();
         ++iter) {
       if (scanning_left_side && ( a_norm_op == LESS_THAN ?
-                                  *(iter->first) < *a_separator :
-                                  *(iter->first) <= *a_separator ))
+                                  iter->first < a_separator :
+                                  iter->first <= a_separator ))
       {
         // the current punctual value must go in the left child
         if (!tmp_child_left) {
@@ -620,12 +620,12 @@ private:
                                                (tmp_child_left? tmp_child_left : b->dfl_node),
                                                merger, extra_info,
                                                bound_low, bl_incl,
-                                               a_separator, a_norm_op == LESS_EQUAL_THAN);
+                                               &a_separator, a_norm_op == LESS_EQUAL_THAN);
     TreeNode<KType, AType> *child_right = merge((a_op == LESS_THAN || a_op == LESS_EQUAL_THAN ?
                                                  a->dfl_node : a->range_node ),
                                                 (tmp_child_right? tmp_child_right : b->dfl_node),
                                                 merger, extra_info,
-                                                a_separator, a_norm_op == LESS_THAN,
+                                                &a_separator, a_norm_op == LESS_THAN,
                                                 bound_high, bh_incl);
 
     result = new RangeOpNode<KType, AType>(child_right);
@@ -650,11 +650,11 @@ private:
     PunctOpNode<KType, AType> *result = new PunctOpNode<KType, AType>(merged_dfl);
     result->op = EQUAL;
     
-    typename std::map<KType*,AType*>::const_iterator a_iter = a->others.begin();
-    typename std::map<KType*,AType*>::const_iterator b_iter = b->others.begin();
+    typename std::map<KType,AType>::const_iterator a_iter = a->others.begin();
+    typename std::map<KType,AType>::const_iterator b_iter = b->others.begin();
     for (; a_iter != a->others.end() && b_iter != b->others.end() ; ) {
       // need to account both the lower and the higher bounds in all subcases
-      if( *(a_iter->first) < *(b_iter->first) ) {
+      if( (a_iter->first) < (b_iter->first) ) {
         if(!is_out_of_low_bound(a_iter->first, bound_low, bl_incl))
           result->others[a_iter->first]=(*merger)(a_iter->second, b_dfl->action, extra_info);
 
@@ -662,7 +662,7 @@ private:
           break; // all the following in both 'a' and 'b' will be out of upper bound
 
         ++a_iter; // advance the iterator
-      } else if ( *(a_iter->first) > *(b_iter->first) ) {
+      } else if ( (a_iter->first) > (b_iter->first) ) {
         if(!is_out_of_low_bound(b_iter->first, bound_low, bl_incl))
           result->others[b_iter->first]=(*merger)(a_dfl->action, b_iter->second, extra_info);
 
@@ -670,7 +670,7 @@ private:
           break; // all the following in both 'a' and 'b' will be out of upper bound
 
         ++b_iter; // advance the iterator
-      } else { // if *(a_iter->first) == *(b_iter->first) )
+      } else { // if (a_iter->first) == (b_iter->first) )
         if(!is_out_of_low_bound(a_iter->first, bound_low, bl_incl))
           result->others[a_iter->first]=(*merger)(a_iter->second, b_iter->second, extra_info);
 
@@ -699,19 +699,19 @@ private:
     return result;
   }
 
-  inline static bool is_out_of_high_bound(const KType *val, const KType *high_bound,
+  inline static bool is_out_of_high_bound(const KType &val, const KType *high_bound,
                                           bool bh_included)
   {
     return (high_bound &&
-            (bh_included ? *val > *high_bound : *val >= *high_bound)
+            (bh_included ? (val > *high_bound) : (val >= *high_bound) )
       );
   }
 
-  inline static bool is_out_of_low_bound(const KType *val, const KType *low_bound,
+  inline static bool is_out_of_low_bound(const KType &val, const KType *low_bound,
                                           bool bl_included)
   {
     return (low_bound &&
-            (bl_included ? *val < *low_bound : *val <= *low_bound)
+            (bl_included ? val < *low_bound : val <= *low_bound)
       );
   }
 };
@@ -720,7 +720,7 @@ private:
 /* implementations that needed fwd declarations */
 template <class KType, class AType>
 OpNode<KType,AType>* OpNode<KType,AType>::buildOpNode
-(AType *dfl_action, RangeOperator_t op, KType *key, AType *cond_action)
+(AType dfl_action, RangeOperator_t op, KType key, AType cond_action)
 {
   OpNode<KType,AType> *node;
   switch(op){
