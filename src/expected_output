@@ -2,7 +2,7 @@
 'chiave_a' mapped to: 'DEFAULT1'
 'chiave_b' mapped to: 'valore_b'
 'chiave_c' mapped to: 'DEFAULT1'
-PUNT: 
+PUNT:
  {chiave_b} => {valore_b}
  ACTION: DEFAULT1
 ======== r2 ========
@@ -21,7 +21,7 @@ RANGE: 0 for chiave_c
 'chiave_b' mapped to: '[merged 'valore_b' with 'valore_c']'
 'chiave_c' mapped to: '[merged 'DEFAULT2' with 'DEFAULT1']'
 RANGE: 0 for chiave_c
- PUNT: 
+ PUNT:
   {chiave_b} => {[merged 'valore_b' with 'valore_c']}
   ACTION: [merged 'DEFAULT1' with 'valore_c']
  ACTION: [merged 'DEFAULT2' with 'DEFAULT1']

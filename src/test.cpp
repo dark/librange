@@ -89,7 +89,7 @@ void cb_punt(RangeOperator_t r, const std::map<string,string> &m, void *ptr){
   stk->pop();
 
   pr_indent(indent);
-  cout << "PUNT: " << endl;
+  cout << "PUNT:" << endl;
   ++indent;
   for(std::map<string,string>::const_iterator iter = m.begin();
       iter != m.end();
