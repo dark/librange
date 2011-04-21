@@ -1,0 +1,181 @@
+======== r1 ========
+'chiave_a' mapped to: 'DEFAULT1'
+'chiave_b' mapped to: 'valore_b'
+'chiave_c' mapped to: 'DEFAULT1'
+PUNT: 
+ {chiave_b} => {valore_b}
+ ACTION: DEFAULT1
+======== r2 ========
+'chiave_a' mapped to: 'valore_c'
+'chiave_b' mapped to: 'valore_c'
+'chiave_c' mapped to: 'DEFAULT2'
+RANGE: 0 for chiave_c
+ ACTION: valore_c
+ ACTION: DEFAULT2
+======== r3 ========
+: [merged 'DEFAULT1' with 'DEFAULT2']
+: [merged 'DEFAULT1' with 'valore_c']
+: [merged 'valore_b' with 'valore_c']
+: [merged 'DEFAULT2' with 'DEFAULT1']
+'chiave_a' mapped to: '[merged 'DEFAULT1' with 'valore_c']'
+'chiave_b' mapped to: '[merged 'valore_b' with 'valore_c']'
+'chiave_c' mapped to: '[merged 'DEFAULT2' with 'DEFAULT1']'
+RANGE: 0 for chiave_c
+ PUNT: 
+  {chiave_b} => {[merged 'valore_b' with 'valore_c']}
+  ACTION: [merged 'DEFAULT1' with 'valore_c']
+ ACTION: [merged 'DEFAULT2' with 'DEFAULT1']
+
+
+======== rint1 ========
+'80' mapped to: 'lesser than 1024'
+'1024' mapped to: 'DEFAULT1'
+'32000' mapped to: 'DEFAULT1'
+action-0: DEFAULT1
+action-1: lesser than 1024
+RANGE: 0 for 1024
+ ACTION: lesser than 1024
+ ACTION: DEFAULT1
+======== rint2 ========
+'80' mapped to: 'equal to 80'
+'1024' mapped to: 'DEFAULT2'
+'32000' mapped to: 'DEFAULT2'
+action-0: DEFAULT2
+action-1: equal to 80
+PUNT: 
+ {80} => {equal to 80}
+ ACTION: DEFAULT2
+======== rint3 ========
+'80' mapped to: 'DEFAULT3'
+'1024' mapped to: 'DEFAULT3'
+'32000' mapped to: 'greater than or equal to 32000'
+action-0: DEFAULT3
+action-1: greater than or equal to 32000
+RANGE: 3 for 32000
+ ACTION: greater than or equal to 32000
+ ACTION: DEFAULT3
+======== rint4 ========
+: [merged 'DEFAULT1' with 'DEFAULT2']
+: [merged 'DEFAULT2' with 'lesser than 1024']
+: [merged 'equal to 80' with 'lesser than 1024']
+: [merged 'DEFAULT1' with 'DEFAULT2']
+'80' mapped to: '[merged 'equal to 80' with 'lesser than 1024']'
+'1024' mapped to: '[merged 'DEFAULT1' with 'DEFAULT2']'
+'32000' mapped to: '[merged 'DEFAULT1' with 'DEFAULT2']'
+action-0: [merged 'DEFAULT1' with 'DEFAULT2']
+action-1: [merged 'DEFAULT2' with 'lesser than 1024']
+action-2: [merged 'equal to 80' with 'lesser than 1024']
+RANGE: 0 for 1024
+ PUNT: 
+  {80} => {[merged 'equal to 80' with 'lesser than 1024']}
+  ACTION: [merged 'DEFAULT2' with 'lesser than 1024']
+ ACTION: [merged 'DEFAULT1' with 'DEFAULT2']
+======== rint5 ========
+: [merged '[merged 'DEFAULT1' with 'DEFAULT2']' with 'DEFAULT3']
+: [merged '[merged 'DEFAULT2' with 'lesser than 1024']' with 'DEFAULT3']
+: [merged '[merged 'equal to 80' with 'lesser than 1024']' with 'DEFAULT3']
+: [merged '[merged 'DEFAULT1' with 'DEFAULT2']' with 'DEFAULT3']
+: [merged '[merged 'DEFAULT1' with 'DEFAULT2']' with 'greater than or equal to 32000']
+'80' mapped to: '[merged '[merged 'equal to 80' with 'lesser than 1024']' with 'DEFAULT3']'
+'1024' mapped to: '[merged '[merged 'DEFAULT1' with 'DEFAULT2']' with 'DEFAULT3']'
+'32000' mapped to: '[merged '[merged 'DEFAULT1' with 'DEFAULT2']' with 'greater than or equal to 32000']'
+action-0: [merged '[merged 'DEFAULT1' with 'DEFAULT2']' with 'DEFAULT3']
+action-1: [merged '[merged 'DEFAULT1' with 'DEFAULT2']' with 'greater than or equal to 32000']
+action-2: [merged '[merged 'DEFAULT2' with 'lesser than 1024']' with 'DEFAULT3']
+action-3: [merged '[merged 'equal to 80' with 'lesser than 1024']' with 'DEFAULT3']
+RANGE: 0 for 1024
+ PUNT: 
+  {80} => {[merged '[merged 'equal to 80' with 'lesser than 1024']' with 'DEFAULT3']}
+  ACTION: [merged '[merged 'DEFAULT2' with 'lesser than 1024']' with 'DEFAULT3']
+ RANGE: 0 for 32000
+  ACTION: [merged '[merged 'DEFAULT1' with 'DEFAULT2']' with 'DEFAULT3']
+  ACTION: [merged '[merged 'DEFAULT1' with 'DEFAULT2']' with 'greater than or equal to 32000']
+======== rint6 ========
+: [merged 'DEFAULT2' with 'DEFAULT3']
+: [merged 'DEFAULT2' with 'DEFAULT3']
+: [merged 'equal to 80' with 'DEFAULT3']
+: [merged 'greater than or equal to 32000' with 'DEFAULT2']
+'80' mapped to: '[merged 'equal to 80' with 'DEFAULT3']'
+'1024' mapped to: '[merged 'DEFAULT2' with 'DEFAULT3']'
+'32000' mapped to: '[merged 'greater than or equal to 32000' with 'DEFAULT2']'
+action-0: [merged 'DEFAULT2' with 'DEFAULT3']
+action-1: [merged 'equal to 80' with 'DEFAULT3']
+action-2: [merged 'greater than or equal to 32000' with 'DEFAULT2']
+RANGE: 0 for 32000
+ PUNT: 
+  {80} => {[merged 'equal to 80' with 'DEFAULT3']}
+  ACTION: [merged 'DEFAULT2' with 'DEFAULT3']
+ ACTION: [merged 'greater than or equal to 32000' with 'DEFAULT2']
+======== rint7 ========
+: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
+: [merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']
+: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']
+'80' mapped to: '[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']'
+'1024' mapped to: '[merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']'
+'32000' mapped to: '[merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']'
+action-0: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']
+action-1: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+action-2: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
+action-3: [merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']
+RANGE: 0 for 1024
+ PUNT: 
+  {80} => {[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']}
+  ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
+ RANGE: 0 for 32000
+  ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+  ACTION: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']
+======== rint8 ========
+: [merged 'DEFAULT1' with '[merged 'DEFAULT2' with 'DEFAULT3']']
+: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
+: [merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']
+: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']
+'80' mapped to: '[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']'
+'1024' mapped to: '[merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']'
+'32000' mapped to: '[merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']'
+action-0: [merged 'DEFAULT1' with '[merged 'DEFAULT2' with 'DEFAULT3']']
+action-1: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']
+action-2: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+action-3: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
+action-4: [merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']
+RANGE: 0 for 1024
+ PUNT: 
+  {80} => {[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']}
+  ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
+ RANGE: 0 for 32000
+  ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+  ACTION: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']
+======== rint9 ========
+'80' mapped to: '[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']'
+'1024' mapped to: '[merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']'
+'32000' mapped to: '[merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']'
+action-0: [merged 'DEFAULT1' with '[merged 'DEFAULT2' with 'DEFAULT3']']
+action-1: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']
+action-2: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+action-3: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
+action-4: [merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']
+RANGE: 0 for 1024
+ PUNT: 
+  {80} => {[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']}
+  ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
+ RANGE: 0 for 32000
+  ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+  ACTION: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']
+======== rint10_ptr ========
+'80' mapped to: '[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']'
+'1024' mapped to: '[merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']'
+'32000' mapped to: '[merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']'
+action-0: [merged 'DEFAULT1' with '[merged 'DEFAULT2' with 'DEFAULT3']']
+action-1: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']
+action-2: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+action-3: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
+action-4: [merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']
+RANGE: 0 for 1024
+ PUNT: 
+  {80} => {[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']}
+  ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
+ RANGE: 0 for 32000
+  ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+  ACTION: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']

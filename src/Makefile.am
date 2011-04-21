@@ -1,4 +1,4 @@
 AM_CPPFLAGS = -I$(srcdir)/../lib
-bin_PROGRAMS = main
-main_SOURCES = main.cpp
-main_LDADD = ../lib/librange.la
+bin_PROGRAMS = test
+test_SOURCES = test.cpp
+test_LDADD = ../lib/librange.la
