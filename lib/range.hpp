@@ -101,7 +101,8 @@ std::set<AType> Range<KType,AType>::findAll(){
   std::set<AType> to_ret;
 
   to_ret.insert(default_action);
-  tree->grabAllActions(&to_ret);
+  if(tree)
+    tree->grabAllActions(&to_ret);
 
   return to_ret;
 }
