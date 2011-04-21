@@ -50,6 +50,7 @@ public:
   virtual AType find(KType key) const = 0;
   virtual void grabAllActions(std::set<AType>* actions) const = 0;
   virtual void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) const = 0;
+  virtual void changeActions(const std::map<AType,AType> &mappings) = 0;
 };
 
 
@@ -70,6 +71,13 @@ public:
   void grabAllActions(std::set<AType>* actions) const {actions->insert(action);}
   void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) const
   { if (action_callback) (*action_callback)(action, extra_info); }
+
+  void changeActions(const std::map<AType,AType> &mappings) {
+    typename std::map<AType,AType>::const_iterator i = mappings.find(action);
+    if(i != mappings.end()) {
+      action = i->second;
+    }
+  }
 
 private:
   AType action;
@@ -180,6 +188,11 @@ public:
     this->dfl_node->traverse(range_callback, punt_callback, action_callback, extra_info);
   }
 
+  void changeActions(const std::map<AType,AType> &mappings) {
+    this->dfl_node->changeActions(mappings);
+    range_node->changeActions(mappings);
+  }
+
 private:
   KType range_separator;
   TreeNode<KType,AType> *range_node;
@@ -263,6 +276,25 @@ public:
     }
 
     this->dfl_node->traverse(range_callback, punt_callback, action_callback, extra_info);
+  }
+
+  void changeActions(const std::map<AType,AType> &mappings) {
+    this->dfl_node->changeActions(mappings);
+
+    for (typename std::map<KType,AType>::iterator i = others.begin();
+         i != others.end();
+         ) {
+      // this is because if I erase 'i' before incrementing it, the iterator
+      // will lose any meaning and I will not be able to increment it
+      typename std::map<KType,AType>::iterator i_copy = i++;
+
+      typename std::map<AType,AType>::const_iterator j = mappings.find(i_copy->second);
+      if(j != mappings.end()) {
+        KType tmp = i_copy->first;
+        others.erase(i_copy);
+        others[tmp] = j->second;
+      }
+    }
   }
 
 private:

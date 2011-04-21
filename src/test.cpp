@@ -260,4 +260,29 @@ int main(){
   print_mapping_int(*rint10_ptr, v_c);
   print_all_int(*rint10_ptr);
   do_traversal_int(*rint10_ptr);
+
+  cout << "======== rint11 ========" << endl;
+  Range<int,string> rint11 = Range<int,string>(rint1);
+  print_mapping_int(rint11, v_a);
+  print_mapping_int(rint11, v_b);
+  print_mapping_int(rint11, v_c);
+  print_all_int(rint11);
+  do_traversal_int(rint11);
+
+  cout << "======== rint11, changed actions ========" << endl;
+  map<string,string> old2new;
+  old2new[less_than_1024]=string("Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.");
+  rint11.changeActions(old2new);
+  print_mapping_int(rint11, v_a);
+  print_mapping_int(rint11, v_b);
+  print_mapping_int(rint11, v_c);
+  print_all_int(rint11);
+  do_traversal_int(rint11);
+
+  cout << "======== again, rint1, that is said to be immune to Ninjutsu ========" << endl;
+  print_mapping_int(rint1, v_a);
+  print_mapping_int(rint1, v_b);
+  print_mapping_int(rint1, v_c);
+  print_all_int(rint1);
+  do_traversal_int(rint1);
 }

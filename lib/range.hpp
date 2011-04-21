@@ -48,6 +48,7 @@ public:
   std::set<AType> findAll();
   static Range intersect(Range a, Range b, merger_func_t merger, void *extra_info);
   void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info);
+  void changeActions(const std::map<AType,AType> &mappings);
 
 private:
   AType default_action;
@@ -137,6 +138,13 @@ void Range<KType,AType>::traverse
     tree->traverse(range_callback, punt_callback, action_callback, extra_info);
   else if (action_callback)
     (*action_callback)(default_action, extra_info);
+}
+
+template <class KType, class AType>
+void Range<KType,AType>::changeActions(const std::map<AType,AType> &mappings)
+{
+  if (tree)
+    tree->changeActions(mappings);
 }
 
 #endif /* RANGE_HPP_INCLUDED */

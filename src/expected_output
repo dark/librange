@@ -179,3 +179,30 @@ RANGE: 0 for 1024
  RANGE: 0 for 32000
   ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
   ACTION: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']
+======== rint11 ========
+'80' mapped to: 'lesser than 1024'
+'1024' mapped to: 'DEFAULT1'
+'32000' mapped to: 'DEFAULT1'
+action-0: DEFAULT1
+action-1: lesser than 1024
+RANGE: 0 for 1024
+ ACTION: lesser than 1024
+ ACTION: DEFAULT1
+======== rint11, changed actions ========
+'80' mapped to: 'Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.'
+'1024' mapped to: 'DEFAULT1'
+'32000' mapped to: 'DEFAULT1'
+action-0: DEFAULT1
+action-1: Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.
+RANGE: 0 for 1024
+ ACTION: Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.
+ ACTION: DEFAULT1
+======== again, rint1, that is said to be immune to Ninjutsu ========
+'80' mapped to: 'lesser than 1024'
+'1024' mapped to: 'DEFAULT1'
+'32000' mapped to: 'DEFAULT1'
+action-0: DEFAULT1
+action-1: lesser than 1024
+RANGE: 0 for 1024
+ ACTION: lesser than 1024
+ ACTION: DEFAULT1
