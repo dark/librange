@@ -42,7 +42,7 @@ RANGE: 0 for 1024
 '32000' mapped to: 'DEFAULT2'
 action-0: DEFAULT2
 action-1: equal to 80
-PUNT: 
+PUNT:
  {80} => {equal to 80}
  ACTION: DEFAULT2
 ======== rint3 ========
@@ -66,7 +66,7 @@ action-0: [merged 'DEFAULT1' with 'DEFAULT2']
 action-1: [merged 'DEFAULT2' with 'lesser than 1024']
 action-2: [merged 'equal to 80' with 'lesser than 1024']
 RANGE: 0 for 1024
- PUNT: 
+ PUNT:
   {80} => {[merged 'equal to 80' with 'lesser than 1024']}
   ACTION: [merged 'DEFAULT2' with 'lesser than 1024']
  ACTION: [merged 'DEFAULT1' with 'DEFAULT2']
@@ -84,7 +84,7 @@ action-1: [merged '[merged 'DEFAULT1' with 'DEFAULT2']' with 'greater than or eq
 action-2: [merged '[merged 'DEFAULT2' with 'lesser than 1024']' with 'DEFAULT3']
 action-3: [merged '[merged 'equal to 80' with 'lesser than 1024']' with 'DEFAULT3']
 RANGE: 0 for 1024
- PUNT: 
+ PUNT:
   {80} => {[merged '[merged 'equal to 80' with 'lesser than 1024']' with 'DEFAULT3']}
   ACTION: [merged '[merged 'DEFAULT2' with 'lesser than 1024']' with 'DEFAULT3']
  RANGE: 0 for 32000
@@ -102,7 +102,7 @@ action-0: [merged 'DEFAULT2' with 'DEFAULT3']
 action-1: [merged 'equal to 80' with 'DEFAULT3']
 action-2: [merged 'greater than or equal to 32000' with 'DEFAULT2']
 RANGE: 0 for 32000
- PUNT: 
+ PUNT:
   {80} => {[merged 'equal to 80' with 'DEFAULT3']}
   ACTION: [merged 'DEFAULT2' with 'DEFAULT3']
  ACTION: [merged 'greater than or equal to 32000' with 'DEFAULT2']
@@ -120,7 +120,7 @@ action-1: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
 action-2: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
 action-3: [merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']
 RANGE: 0 for 1024
- PUNT: 
+ PUNT:
   {80} => {[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']}
   ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
  RANGE: 0 for 32000
@@ -141,7 +141,7 @@ action-2: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
 action-3: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
 action-4: [merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']
 RANGE: 0 for 1024
- PUNT: 
+ PUNT:
   {80} => {[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']}
   ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
  RANGE: 0 for 32000
@@ -157,7 +157,7 @@ action-2: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
 action-3: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
 action-4: [merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']
 RANGE: 0 for 1024
- PUNT: 
+ PUNT:
   {80} => {[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']}
   ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
  RANGE: 0 for 32000
@@ -173,7 +173,7 @@ action-2: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
 action-3: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
 action-4: [merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']
 RANGE: 0 for 1024
- PUNT: 
+ PUNT:
   {80} => {[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'lesser than 1024']}
   ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'lesser than 1024']
  RANGE: 0 for 32000
@@ -220,7 +220,7 @@ action-1: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
 action-2: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.']
 action-3: [merged '[merged 'equal to 80' with 'DEFAULT3']' with 'Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.']
 RANGE: 0 for 1024
- PUNT: 
+ PUNT:
   {80} => {[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.']}
   ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.']
  RANGE: 0 for 32000

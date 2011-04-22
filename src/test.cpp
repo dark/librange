@@ -105,7 +105,7 @@ void cb_punt_int(RangeOperator_t r, const std::map<int,string> &m, void *ptr){
   stk->pop();
 
   pr_indent(indent);
-  cout << "PUNT: " << endl;
+  cout << "PUNT:" << endl;
   ++indent;
   for(std::map<int,string>::const_iterator iter = m.begin();
       iter != m.end();
