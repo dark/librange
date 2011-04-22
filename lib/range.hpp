@@ -47,6 +47,7 @@ public:
   AType find(KType key);
   std::set<AType> findAll();
   static Range intersect(Range a, Range b, merger_func_t merger, void *extra_info);
+  static Range* intersect(Range *a, Range *b, merger_func_t merger, void *extra_info);
   void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info);
   void changeActions(const std::map<AType,AType> &mappings);
 
@@ -122,6 +123,25 @@ Range<KType,AType> Range<KType,AType>::intersect(Range a, Range b, merger_func_t
   } else {
     // otherwise take the not-NULL tree. If both are NULL, set it to NULL (implicit in the assignment below)
     result.tree = (a.tree != NULL? a.tree : b.tree);
+  }
+
+  return result;
+}
+
+template <class KType, class AType>
+Range<KType,AType>* Range<KType,AType>::intersect(Range *a, Range *b, merger_func_t merger, void* extra_info)
+{
+  AType new_dfl = (*merger)(a->default_action, b->default_action, extra_info);
+  Range *result = new Range(new_dfl);
+
+  if(a->tree != NULL && b->tree != NULL) {
+    TreeNode<KType,AType> *tmp = TreeMerger<KType,AType>::merge(a->tree, b->tree, merger, extra_info, NULL, false, NULL, false);
+    // the following cast is legal, because by construction only an OpNode can be the root of the tree
+    result->tree = dynamic_cast<OpNode<KType,AType>*>(tmp);
+    if(!result->tree) abort(); // something broke
+  } else {
+    // otherwise take the not-NULL tree. If both are NULL, set it to NULL (implicit in the assignment below)
+    result->tree = (a->tree != NULL? a->tree : b->tree);
   }
 
   return result;

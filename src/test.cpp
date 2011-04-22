@@ -285,4 +285,12 @@ int main(){
   print_mapping_int(rint1, v_c);
   print_all_int(rint1);
   do_traversal_int(rint1);
+
+  cout << "======== rint12_ptr ========" << endl;
+  Range<int,string> *rint12_ptr = Range<int,string>::intersect(&rint6, &rint11, &MyTest::mywrapper, NULL);
+  print_mapping_int(*rint12_ptr, v_a);
+  print_mapping_int(*rint12_ptr, v_b);
+  print_mapping_int(*rint12_ptr, v_c);
+  print_all_int(*rint12_ptr);
+  do_traversal_int(*rint12_ptr);
 }

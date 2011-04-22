@@ -206,3 +206,23 @@ action-1: lesser than 1024
 RANGE: 0 for 1024
  ACTION: lesser than 1024
  ACTION: DEFAULT1
+======== rint12_ptr ========
+: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.']
+: [merged '[merged 'equal to 80' with 'DEFAULT3']' with 'Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.']
+: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']
+'80' mapped to: '[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.']'
+'1024' mapped to: '[merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']'
+'32000' mapped to: '[merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']'
+action-0: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']
+action-1: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+action-2: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.']
+action-3: [merged '[merged 'equal to 80' with 'DEFAULT3']' with 'Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.']
+RANGE: 0 for 1024
+ PUNT: 
+  {80} => {[merged '[merged 'equal to 80' with 'DEFAULT3']' with 'Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.']}
+  ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'Ninjutsu. Put this card onto the battlefield from your hand tapped and attacking.']
+ RANGE: 0 for 32000
+  ACTION: [merged '[merged 'DEFAULT2' with 'DEFAULT3']' with 'DEFAULT1']
+  ACTION: [merged 'DEFAULT1' with '[merged 'greater than or equal to 32000' with 'DEFAULT2']']
