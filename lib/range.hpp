@@ -163,6 +163,9 @@ void Range<KType,AType>::traverse
 template <class KType, class AType>
 void Range<KType,AType>::changeActions(const std::map<AType,AType> &mappings)
 {
+  typename std::map<AType,AType>::const_iterator i = mappings.find(default_action);
+  if(i != mappings.end())
+    default_action = i->second;
   if (tree)
     tree->changeActions(mappings);
 }
