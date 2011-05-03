@@ -115,14 +115,27 @@ Range<KType,AType> Range<KType,AType>::intersect(Range a, Range b, merger_func_t
   AType new_dfl = (*merger)(a.default_action, b.default_action, extra_info);
   Range result(new_dfl);
 
+  result.tree = NULL;
   if(a.tree != NULL && b.tree != NULL) {
     TreeNode<KType,AType> *tmp = TreeMerger<KType,AType>::merge(a.tree, b.tree, merger, extra_info, NULL, false, NULL, false);
     // the following cast is legal, because by construction only an OpNode can be the root of the tree
     result.tree = dynamic_cast<OpNode<KType,AType>*>(tmp);
     if(!result.tree) abort(); // something broke
   } else {
-    // otherwise take the not-NULL tree. If both are NULL, set it to NULL (implicit in the assignment below)
-    result.tree = (a.tree != NULL? a.tree : b.tree);
+    // otherwise take the (possibly) not-NULL tree and merge it with the other default action
+    if(a.tree) {
+      ActionNode<KType,AType> *tmp_action=new ActionNode<KType,AType>(b.default_action);
+      TreeNode<KType,AType> *tmp = TreeMerger<KType,AType>::merge(a.tree, tmp_action, merger, extra_info, NULL, false, NULL, false);
+      result.tree = dynamic_cast<OpNode<KType,AType>*>(tmp);
+      if(!result.tree) abort(); // something broke
+      delete tmp_action;
+    } else if (b.tree) {
+      ActionNode<KType,AType> *tmp_action=new ActionNode<KType,AType>(a.default_action);
+      TreeNode<KType,AType> *tmp = TreeMerger<KType,AType>::merge(b.tree, tmp_action, merger, extra_info, NULL, false, NULL, false);
+      result.tree = dynamic_cast<OpNode<KType,AType>*>(tmp);
+      if(!result.tree) abort(); // something broke
+      delete tmp_action;
+    }
   }
 
   return result;
@@ -134,14 +147,27 @@ Range<KType,AType>* Range<KType,AType>::intersect(Range *a, Range *b, merger_fun
   AType new_dfl = (*merger)(a->default_action, b->default_action, extra_info);
   Range *result = new Range(new_dfl);
 
+  result->tree = NULL;
   if(a->tree != NULL && b->tree != NULL) {
     TreeNode<KType,AType> *tmp = TreeMerger<KType,AType>::merge(a->tree, b->tree, merger, extra_info, NULL, false, NULL, false);
     // the following cast is legal, because by construction only an OpNode can be the root of the tree
     result->tree = dynamic_cast<OpNode<KType,AType>*>(tmp);
     if(!result->tree) abort(); // something broke
   } else {
-    // otherwise take the not-NULL tree. If both are NULL, set it to NULL (implicit in the assignment below)
-    result->tree = (a->tree != NULL? a->tree : b->tree);
+    // otherwise take the (possibly) not-NULL tree and merge it with the other default action
+    if(a->tree) {
+      ActionNode<KType,AType> *tmp_action=new ActionNode<KType,AType>(b->default_action);
+      TreeNode<KType,AType> *tmp = TreeMerger<KType,AType>::merge(a->tree, tmp_action, merger, extra_info, NULL, false, NULL, false);
+      result->tree = dynamic_cast<OpNode<KType,AType>*>(tmp);
+      if(!result->tree) abort(); // something broke
+      delete tmp_action;
+    } else if (b->tree) {
+      ActionNode<KType,AType> *tmp_action=new ActionNode<KType,AType>(a->default_action);
+      TreeNode<KType,AType> *tmp = TreeMerger<KType,AType>::merge(b->tree, tmp_action, merger, extra_info, NULL, false, NULL, false);
+      result->tree = dynamic_cast<OpNode<KType,AType>*>(tmp);
+      if(!result->tree) abort(); // something broke
+      delete tmp_action;
+    }
   }
 
   return result;
