@@ -68,14 +68,20 @@ template <class KType, class AType>
 Range<KType,AType>::Range(const Range<KType,AType> &other)
   : default_action(other.default_action)
 {
-  this->tree = other.tree->clone();
+  if (other.tree)
+    this->tree = other.tree->clone();
+  else
+    this->tree = NULL;
 }
 
 template <class KType, class AType>
 Range<KType,AType>::Range(const Range<KType,AType> *other)
   : default_action(other->default_action)
 {
-  this->tree = other->tree->clone();
+  if (other->tree)
+    this->tree = other->tree->clone();
+  else
+    this->tree = NULL;
 }
 
 template <class KType, class AType>
