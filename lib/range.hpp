@@ -23,6 +23,7 @@
 
 #include <map>
 #include <set>
+#include <string>
 #include "common.h"
 #include "internals.hpp"
 
@@ -50,6 +51,34 @@ public:
   static Range* intersect(Range *a, Range *b, merger_func_t merger, void *extra_info);
   void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info);
   void changeActions(const std::map<AType,AType> &mappings);
+
+  /* ** helper methods ** */
+  static std::string rangeOp2str(RangeOperator_t op) {
+    switch (op) {
+    case LESS_THAN: return std::string("less than");
+    case LESS_EQUAL_THAN: return std::string("less than or equal to");
+    case GREAT_THAN: return std::string("greater than");
+    case GREAT_EQUAL_THAN: return std::string("greater than or equal to");
+    case EQUAL: return std::string("equal to");
+    case INVALID:
+    default:
+      ;
+    }
+    return std::string("");
+  }
+  static std::string rangeOp2shortStr(RangeOperator_t op) {
+    switch (op) {
+    case LESS_THAN: return std::string("<");
+    case LESS_EQUAL_THAN: return std::string("<=");
+    case GREAT_THAN: return std::string(">");
+    case GREAT_EQUAL_THAN: return std::string(">=");
+    case EQUAL: return std::string("=");
+    case INVALID:
+    default:
+      ;
+    }
+    return std::string("");
+  }
 
 private:
   AType default_action;
