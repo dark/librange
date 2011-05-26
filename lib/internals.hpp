@@ -122,6 +122,7 @@ public:
     : range_node(NULL)
   {
     this->dfl_node = new ActionNode<KType,AType>(outside_action);
+    this->op = INVALID;
   }
 
   RangeOpNode* clone() const {
@@ -201,6 +202,7 @@ private:
     : range_node(NULL)
   {
     this->dfl_node = dfl_node; 
+    this->op = INVALID;
   }
 
   inline const TreeNode<KType,AType>* left_interval() const {
@@ -234,6 +236,7 @@ public:
   PunctOpNode(AType default_action)
   {
     this->dfl_node = new ActionNode<KType,AType>(default_action);
+    this->op = INVALID;
   }
 
   PunctOpNode* clone() const {
@@ -250,6 +253,8 @@ public:
   {
     if (op != EQUAL)
       abort();
+
+    this->op = op;
 
     addPuntAction(key, cond_action);
   }
