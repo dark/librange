@@ -51,6 +51,9 @@ public:
   virtual void grabAllActions(std::set<AType>* actions) const = 0;
   virtual void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) const = 0;
   virtual void changeActions(const std::map<AType,AType> &mappings) = 0;
+  // Give a chance to each TreeNode to optimize itself (hopefully reducing its complexity)
+  // By default, do nothing.
+  virtual TreeNode* optimize() { return this; }
 };
 
 
@@ -432,7 +435,7 @@ public:
         }
       }
 
-      return result_range;
+      return result_range->optimize();
     } else if (a_type == PUNCTUAL) {
       // the left node is a PunctOpNode
       const PunctOpNode<KType, AType> *a_prom_punct = dynamic_cast<const PunctOpNode<KType, AType>*>(a);
@@ -444,9 +447,9 @@ public:
           // the right node is a PunctOpNode
           const PunctOpNode<KType, AType> *b_prom_punct = dynamic_cast<const PunctOpNode<KType, AType>*>(b);
           if (!b_prom_punct) abort(); // something broke
-          return merge_punct_punct(a_prom_punct, b_prom_punct, merger, extra_info,
-                                   bound_low, bl_incl, bound_high, bh_incl);
-          break;
+          TreeNode<KType, AType> *res = merge_punct_punct(a_prom_punct, b_prom_punct, merger, extra_info,
+                                                          bound_low, bl_incl, bound_high, bh_incl);
+          return res->optimize();
         }
 
       case ACTION:
@@ -475,7 +478,7 @@ public:
           if (!result_punct) // boundaries prevented me from adding any value to result_punct
             return new_dfl_node;
 
-          return result_punct;
+          return result_punct->optimize();
         }
 
       default: abort(); // something went wrong
