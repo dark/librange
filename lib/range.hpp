@@ -45,11 +45,11 @@ public:
   Range(const Range &other);
   Range(const Range *other);
   void addRange(RangeOperator_t op, KType key, AType action);
-  AType find(KType key);
-  std::set<AType> findAll();
+  AType find(KType key) const;
+  std::set<AType> findAll() const;
   static Range intersect(Range a, Range b, merger_func_t merger, void *extra_info);
   static Range* intersect(Range *a, Range *b, merger_func_t merger, void *extra_info);
-  void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info);
+  void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) const;
   void changeActions(const std::map<AType,AType> &mappings);
 
   /* ** helper methods ** */
@@ -125,7 +125,7 @@ void Range<KType,AType>::addRange
 
 /* returns the action associated with the provided key */
 template <class KType, class AType>
-AType Range<KType,AType>::find(KType key){
+AType Range<KType,AType>::find(KType key) const{
   if (tree == NULL)
     return default_action;
 
@@ -134,7 +134,7 @@ AType Range<KType,AType>::find(KType key){
 
 /* returns all the actions */
 template <class KType, class AType>
-std::set<AType> Range<KType,AType>::findAll(){
+std::set<AType> Range<KType,AType>::findAll() const{
   std::set<AType> to_ret;
 
   to_ret.insert(default_action);
@@ -213,7 +213,7 @@ void Range<KType,AType>::traverse
 (range_callback_func_t range_callback,
  punt_callback_func_t punt_callback,
  action_callback_func_t action_callback,
- void* extra_info)
+ void* extra_info) const
 {
   if (tree)
     tree->traverse(range_callback, punt_callback, action_callback, extra_info);
