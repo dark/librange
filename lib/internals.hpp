@@ -170,6 +170,7 @@ public:
       break;
     case EQUAL:
     case INVALID:
+    default:
       abort();      
     }
 
@@ -775,6 +776,7 @@ OpNode<KType,AType>* OpNode<KType,AType>::buildOpNode
     node = new PunctOpNode<KType,AType>(dfl_action);
     break;
   case INVALID:
+  default:
     abort();
   }
 
