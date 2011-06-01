@@ -71,6 +71,7 @@ public:
   virtual ActionNode* clone() const { return new ActionNode(action); }
   Node_t getType() const { return ACTION; }
   AType find(KType key) const {return action;}
+  AType getAction() const {return action;}
   void grabAllActions(std::set<AType>* actions) const {actions->insert(action);}
   void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) const
   { if (action_callback) (*action_callback)(action, extra_info); }
