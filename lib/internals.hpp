@@ -53,7 +53,7 @@ public:
   virtual void changeActions(const std::map<AType,AType> &mappings) = 0;
   // Give a chance to each TreeNode to optimize itself (hopefully reducing its complexity)
   // By default, do nothing.
-  virtual TreeNode* optimize() { return this; }
+  virtual TreeNode* optimize() __attribute__ ((warn_unused_result)) { return this; }
 };
 
 
@@ -305,6 +305,35 @@ public:
         others[tmp] = j->second;
       }
     }
+  }
+
+  TreeNode<KType, AType>* optimize() {
+    // Goal of the optimization: remove all punctual values whose action
+    // is the same of dfl_node. In the case that no punctual values remain
+    // at all, return the dfl_node itself.
+
+    if(others.size()==0) // easier than expected
+      return this->dfl_node;
+
+    const ActionNode<KType, AType> *dfl_prom_action = dynamic_cast<ActionNode<KType, AType>*>(this->dfl_node);
+    if (!dfl_prom_action) abort(); // something broke
+    const AType dfl_action = dfl_prom_action->getAction();
+
+    for(typename std::map<KType,AType>::iterator i = others.begin();
+        i != others.end();
+        ) {
+      // this is because if I erase 'i' before incrementing it, the iterator
+      // will lose any meaning and I will not be able to increment it
+      typename std::map<KType,AType>::iterator i_copy = i++;
+      if (i_copy->second == dfl_action)
+          others.erase(i_copy);
+    }
+
+    // Did I manage to optimize out the whole list of punctual values?
+    if(others.size()==0)
+      return this->dfl_node;
+
+    return this;
   }
 
 private:
