@@ -50,7 +50,9 @@ public:
   virtual AType find(KType key) const = 0;
   virtual void grabAllActions(std::set<AType>* actions) const = 0;
   virtual void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) const = 0;
-  virtual void changeActions(const std::map<AType,AType> &mappings) = 0;
+  // The action of changing actions might optimize the internal tree on the fly.
+  // Therefore, the most current version of the subtree must always be returned and used
+  virtual TreeNode* changeActions(const std::map<AType,AType> &mappings) __attribute__ ((warn_unused_result)) = 0;
   // Give a chance to each TreeNode to optimize itself (hopefully reducing its complexity)
   // By default, do nothing.
   virtual TreeNode* optimize() __attribute__ ((warn_unused_result)) { return this; }
@@ -76,11 +78,12 @@ public:
   void traverse(range_callback_func_t range_callback, punt_callback_func_t punt_callback, action_callback_func_t action_callback, void *extra_info) const
   { if (action_callback) (*action_callback)(action, extra_info); }
 
-  void changeActions(const std::map<AType,AType> &mappings) {
+  TreeNode<KType,AType>* changeActions(const std::map<AType,AType> &mappings) {
     typename std::map<AType,AType>::const_iterator i = mappings.find(action);
     if(i != mappings.end()) {
       action = i->second;
     }
+    return this;
   }
 
 private:
@@ -194,9 +197,10 @@ public:
     this->dfl_node->traverse(range_callback, punt_callback, action_callback, extra_info);
   }
 
-  void changeActions(const std::map<AType,AType> &mappings) {
-    this->dfl_node->changeActions(mappings);
-    range_node->changeActions(mappings);
+  TreeNode<KType,AType>* changeActions(const std::map<AType,AType> &mappings) {
+    this->dfl_node = this->dfl_node->changeActions(mappings);
+    range_node = range_node->changeActions(mappings);
+    return this;
   }
 
 private:
@@ -288,8 +292,14 @@ public:
     this->dfl_node->traverse(range_callback, punt_callback, action_callback, extra_info);
   }
 
-  void changeActions(const std::map<AType,AType> &mappings) {
-    this->dfl_node->changeActions(mappings);
+  TreeNode<KType, AType>* changeActions(const std::map<AType,AType> &mappings) {
+    this->dfl_node = this->dfl_node->changeActions(mappings);
+
+    // on-the-fly optimization: discard punctual values whose action is the same
+    // of the (possibly new) default action
+    ActionNode<KType, AType> *dfl_prom_action = dynamic_cast<ActionNode<KType, AType>*>(this->dfl_node);
+    if (!dfl_prom_action) abort(); // something broke
+    AType dfl_action = dfl_prom_action->getAction();
 
     for (typename std::map<KType,AType>::iterator i = others.begin();
          i != others.end();
@@ -300,11 +310,26 @@ public:
 
       typename std::map<AType,AType>::const_iterator j = mappings.find(i_copy->second);
       if(j != mappings.end()) {
+        // this punctual value should be converted
         KType tmp = i_copy->first;
         others.erase(i_copy);
-        others[tmp] = j->second;
+        if(i_copy->second != dfl_action)
+          // avoid to add a punctual value if its action is the same of the default one
+          others[tmp] = j->second;
+      }
+      else {
+        // This punctual value should not be converted.
+        // Just check for redundancy against dfl_action, then.
+        if (i_copy->second == dfl_action)
+          others.erase(i_copy);
       }
     }
+
+    // Did I manage to optimize out the whole list of punctual values?
+    if(others.size()==0)
+      return this->dfl_node;
+
+    return this;
   }
 
   TreeNode<KType, AType>* optimize() {

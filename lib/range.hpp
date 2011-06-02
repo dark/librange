@@ -227,8 +227,21 @@ void Range<KType,AType>::changeActions(const std::map<AType,AType> &mappings)
   typename std::map<AType,AType>::const_iterator i = mappings.find(default_action);
   if(i != mappings.end())
     default_action = i->second;
-  if (tree)
-    tree->changeActions(mappings);
+  if (tree) {
+    TreeNode<KType,AType> *new_root = tree->changeActions(mappings);
+    if(new_root->getType() == ACTION) {
+      // The tree was compacted in a single ActionNode, therefore just
+      // extract the default action and check that it is equal to
+      // 'default_action' (it should be, because of the default semantics).
+      ActionNode<KType,AType> *new_root_as_actnode = dynamic_cast<ActionNode<KType, AType>*>(new_root);
+      if (!new_root_as_actnode) abort(); // something is wrong
+      if (default_action != new_root_as_actnode->getAction()) abort(); // this is wrong as well
+      tree = NULL;
+    } else {
+      tree = dynamic_cast<OpNode<KType, AType>*>(new_root);
+      if (!tree) abort(); //something broke, the cast above should be legal
+    }
+  }
 }
 
 #endif /* RANGE_HPP_INCLUDED */
