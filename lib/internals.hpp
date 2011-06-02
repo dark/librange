@@ -372,6 +372,12 @@ private:
   }
 
   void addPuntAction(KType key, AType action){
+    // on the fly optimization: if 'action' is the same of dfl_node, skip this insertion
+    ActionNode<KType, AType> *dfl_prom_action = dynamic_cast<ActionNode<KType, AType>*>(this->dfl_node);
+    if (!dfl_prom_action) abort(); // something broke
+    if ( dfl_prom_action->getAction() == action )
+      return;
+
     others[key]=action;
   }
 };
