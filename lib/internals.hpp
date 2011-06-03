@@ -313,7 +313,7 @@ public:
         // this punctual value should be converted
         KType tmp = i_copy->first;
         others.erase(i_copy);
-        if(i_copy->second != dfl_action)
+        if(j->second != dfl_action)
           // avoid to add a punctual value if its action is the same of the default one
           others[tmp] = j->second;
       }
