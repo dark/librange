@@ -1,0 +1,33 @@
+h2. About
+
+librange is a lightweight, portable C++ library that aims at efficiently representing, merging and traversing different data ranges. Its idea is based on the principles of interval and range trees, but it does not come (yet) for a replacement for them; instead, librange allows the programmer to define mappings between data ranges and actions, and provides facilities to operate on them.
+
+h2. Principles
+
+To use librange, the programmer must first define the type of the data ranges (the key of the mapping, or *"KType"*) and the type of the associated actions (the value of each mapping, or *"AType"*). Then, it is possible to associate each data range of type *KType* with an action of type *AType*. These mappings, in the end, can be intersected and traversed.
+
+h2. Typical use case
+
+One of the typical use cases for librange (actually, the one for which the library was initially designed) is the dynamic representation of conditions inside a compiler and their easy traversal.
+
+h2. Example
+
+Suppose that:
+* *KType* = some integer type
+* *AType* = an abstract representation of a code block, such as its start label
+
+The programmer might desire that:
+* for keys whose value is *less than* _K1_, the code starting at _Label1_ should be executed
+* otherwise, the code starting at _Label2_ should be executed
+
+Later, i.e. while parsing some input data, it is also determined that:
+* for keys whose value is *equal to* _K2_, the code at _Label3_ should be executed
+* otherwise, the code at _Label4_ should be executed
+
+If these two scenarios are intersected, librange detects whether _K2_ is less than _K1_ or not, and, therefore, if _Label3_ should be merged with _Label1_ or with _Label2_. The actual merge between labels, of course, cannot be performed by the library itself; therefore, user-defined callbacks are invoked whenever necessary.
+
+Other possible operations include:
+* retrieve the action associated with a specific key value;
+* substitute actions in a one-to-one fashion;
+* retrieve all the actions that can be reached _(unreachable actions are automatically optimized out by librange)_;
+* orderly traverse the data representation.
