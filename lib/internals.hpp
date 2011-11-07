@@ -21,6 +21,10 @@
 #ifndef INTERNALS_HPP_INCLUDED
 #define INTERNALS_HPP_INCLUDED
 
+#ifdef WIN32 // help poor Windows to be in line with real Operating Systems
+#define __attribute__(a)
+#endif
+
 #include <map>
 #include <stdlib.h>
 #include "common.h"
