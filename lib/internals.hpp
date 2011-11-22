@@ -204,6 +204,19 @@ public:
   TreeNode<KType,AType>* changeActions(const std::map<AType,AType> &mappings) {
     this->dfl_node = this->dfl_node->changeActions(mappings);
     range_node = range_node->changeActions(mappings);
+
+    // try to optimize this RangeOpNode, if both ranges are ActionNode with the same action
+    if(this->dfl_node->getType() == ACTION && range_node->getType() == ACTION) {
+      ActionNode<KType,AType> *dfl_node_as_actnode = dynamic_cast<ActionNode<KType, AType>*>(this->dfl_node);
+      ActionNode<KType,AType> *range_node_as_actnode = dynamic_cast<ActionNode<KType, AType>*>(range_node);
+
+      if(dfl_node_as_actnode == NULL || range_node_as_actnode == NULL) abort(); // something is wrong
+
+      if(dfl_node_as_actnode->getAction() == range_node_as_actnode->getAction())
+        // the optimization is possible! return just one of the nodes (they're equal)
+        return dfl_node_as_actnode;
+    }
+
     return this;
   }
 
